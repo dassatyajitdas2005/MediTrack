@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - MediTrack Hospital Management</title>
+  
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+  
+  <style>
+    body.login-body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #0f172a, #1e293b, #0ea5e9);
+      background-size: 400% 400%;
+      animation: shimmer 15s ease infinite;
+      padding: 20px;
+    }
+    
+    .login-container {
+      width: 100%;
+      max-width: 440px;
+      padding: 40px;
+    }
+
+    .login-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .login-logo {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 16px;
+      background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 32px;
+      box-shadow: 0 8px 24px rgba(14, 165, 233, 0.4);
+    }
+
+    .demo-role-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px border-color;
+    }
+  </style>
+</head>
+<body class="login-body">
+
+  <div class="glass-card login-container animate-fade-in">
+    <div class="login-header">
+      <div class="login-logo">
+        <i class="bx bx-plus-medical"></i>
+      </div>
+      <h2 style="font-size: 24px; font-weight: 800; color: var(--text-main);">Medi<span style="color: var(--primary-500);">Track</span> Portal</h2>
+      <p style="font-size: 14px; color: var(--text-muted); margin-top: 4px;">Hospital Internship &amp; Training System</p>
+    </div>
+
+    <form id="login-form">
+      <div class="form-group">
+        <label class="form-label" for="login-email">Email Address</label>
+        <div class="search-box">
+          <i class="bx bx-envelope search-icon"></i>
+          <input type="email" id="login-email" class="form-control" placeholder="name@hospital.com" required value="admin@meditrack.com">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="login-password">Password</label>
+        <div class="search-box">
+          <i class="bx bx-lock-alt search-icon"></i>
+          <input type="password" id="login-password" class="form-control" placeholder="••••••••" required value="password123">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="login-role">Select Login Role</label>
+        <select id="login-role" class="form-control">
+          <option value="admin">Admin / Superintendent</option>
+          <option value="student">Student / Intern</option>
+          <option value="supervisor">Supervisor / Doctor</option>
+        </select>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 12px; padding: 12px;">
+        <i class="bx bx-log-in-circle"></i> Sign In to Portal
+      </button>
+    </form>
+
+    <div style="text-align: center; margin-top: 24px; font-size: 12px; color: var(--text-muted);">
+      Quick Demo Access (1-Click Login):
+    </div>
+    
+    <div class="demo-role-grid">
+      <button class="btn btn-secondary btn-sm demo-login-btn" data-email="admin@meditrack.com" data-role="admin">
+        <i class="bx bx-shield-quarter"></i> Admin
+      </button>
+      <button class="btn btn-secondary btn-sm demo-login-btn" data-email="intern@meditrack.com" data-role="student">
+        <i class="bx bx-user"></i> Student
+      </button>
+      <button class="btn btn-secondary btn-sm demo-login-btn" data-email="supervisor@meditrack.com" data-role="supervisor">
+        <i class="bx bx-plus-circle"></i> Supervisor
+      </button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { auth } from './assets/js/auth.js';
+
+    document.getElementById('login-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value;
+      const role = document.getElementById('login-role').value;
+      auth.login(email, role);
+      window.location.href = 'dashboard.html';
+    });
+
+    document.querySelectorAll('.demo-login-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const email = btn.getAttribute('data-email');
+        const role = btn.getAttribute('data-role');
+        auth.login(email, role);
+        window.location.href = 'dashboard.html';
+      });
+    });
+  </script>
+</body>
+</html>

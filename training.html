@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Training Progress - MediTrack</title>
+  
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <div id="sidebar-container"></div>
+
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="page-content animate-fade-in">
+        <!-- Search & Course Filter Controls -->
+        <div class="glass-card" style="padding: 20px; margin-bottom: 24px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px;">
+          <div class="search-box" style="flex: 1; min-width: 260px;">
+            <i class="bx bx-search search-icon"></i>
+            <input type="text" id="training-search" class="form-control" placeholder="Search by intern name or ID...">
+          </div>
+
+          <select id="training-course-filter" class="form-control" style="width: 220px;">
+            <option value="">All Course Types</option>
+            <option value="Diploma Pharmacy">Diploma Pharmacy (90 Days)</option>
+            <option value="B.Pharm">B.Pharm (30 Days)</option>
+            <option value="Nursing">Nursing (30 Days)</option>
+            <option value="DMLT">DMLT</option>
+            <option value="Physiotherapy">Physiotherapy</option>
+          </select>
+        </div>
+
+        <!-- Training Progress Grid Cards -->
+        <div id="training-grid-container" class="grid-2">
+          <!-- Dynamic Progress Cards -->
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script type="module" src="assets/js/training.js"></script>
+</body>
+</html>

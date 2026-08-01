@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Doctor OPD Schedule - MediTrack</title>
+  
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <div id="sidebar-container"></div>
+
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="page-content animate-fade-in">
+        <!-- Top Day Selector Tabs & Admin Control -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 16px;">
+          <div>
+            <h2 style="font-size: 18px; font-weight: 800;">Hospital OPD Timetable</h2>
+            <p style="font-size: 13px; color: var(--text-muted);">Select a weekday to view available doctors in each department</p>
+          </div>
+
+          <button id="add-doctor-btn" class="btn btn-primary">
+            <i class="bx bx-plus"></i> Add Doctor
+          </button>
+        </div>
+
+        <!-- OPD Days Navigation Tabs -->
+        <div class="opd-tabs">
+          <button class="opd-tab-btn active" data-day="Monday"><i class="bx bx-calendar-event"></i> Monday</button>
+          <button class="opd-tab-btn" data-day="Tuesday"><i class="bx bx-calendar-event"></i> Tuesday</button>
+          <button class="opd-tab-btn" data-day="Wednesday"><i class="bx bx-calendar-event"></i> Wednesday</button>
+          <button class="opd-tab-btn" data-day="Thursday"><i class="bx bx-calendar-event"></i> Thursday</button>
+          <button class="opd-tab-btn" data-day="Friday"><i class="bx bx-calendar-event"></i> Friday</button>
+          <button class="opd-tab-btn" data-day="Saturday"><i class="bx bx-calendar-event"></i> Saturday</button>
+        </div>
+
+        <!-- OPD Doctor Grid -->
+        <div id="doctor-grid-container" class="grid-3">
+          <!-- Dynamic OPD Doctor Cards grouped by Department -->
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Add/Edit Doctor Modal -->
+  <div class="modal-overlay" id="doctor-modal">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 id="doctor-modal-title">Add Doctor to OPD</h3>
+        <button class="modal-close-btn" id="close-doctor-modal"><i class="bx bx-x"></i></button>
+      </div>
+      <form id="doctor-form">
+        <div class="modal-body">
+          <input type="hidden" id="doctor-id-input">
+          
+          <div class="form-group">
+            <label class="form-label">Doctor Name</label>
+            <input type="text" id="doc-name" class="form-control" required placeholder="e.g. Dr. Rajesh Khanna">
+          </div>
+
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label">Department</label>
+              <select id="doc-department" class="form-control" required>
+                <option value="Medicine">Medicine</option>
+                <option value="ENT">ENT</option>
+                <option value="General Surgery">General Surgery</option>
+                <option value="Pediatrics">Pediatrics</option>
+                <option value="Orthopedics">Orthopedics</option>
+                <option value="Dermatology">Dermatology</option>
+                <option value="Dental">Dental</option>
+                <option value="Gynecology">Gynecology</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Specialization</label>
+              <input type="text" id="doc-specialization" class="form-control" required placeholder="e.g. Senior General Physician">
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label">OPD Room No</label>
+              <input type="text" id="doc-room" class="form-control" required placeholder="e.g. OPD Room 101">
+            </div>
+            <div class="form-group">
+              <label class="form-label">OPD Timing</label>
+              <input type="text" id="doc-opd-timing" class="form-control" required placeholder="e.g. 09:00 AM - 01:00 PM">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Available Days (Check all that apply)</label>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 12px; background: var(--bg-main); border-radius: var(--radius-md);">
+              <label><input type="checkbox" class="day-checkbox" value="Monday"> Monday</label>
+              <label><input type="checkbox" class="day-checkbox" value="Tuesday"> Tuesday</label>
+              <label><input type="checkbox" class="day-checkbox" value="Wednesday"> Wednesday</label>
+              <label><input type="checkbox" class="day-checkbox" value="Thursday"> Thursday</label>
+              <label><input type="checkbox" class="day-checkbox" value="Friday"> Friday</label>
+              <label><input type="checkbox" class="day-checkbox" value="Saturday"> Saturday</label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="cancel-doctor-modal">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="bx bx-save"></i> Save OPD Schedule</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module" src="assets/js/doctor.js"></script>
+</body>
+</html>

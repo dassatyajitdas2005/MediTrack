@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attendance Module - MediTrack</title>
+  
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <div id="sidebar-container"></div>
+
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="page-content animate-fade-in">
+        <!-- Date Selector & Admin Save Bar -->
+        <div class="glass-card" style="padding: 20px; margin-bottom: 24px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px;">
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <label class="form-label" style="margin-bottom: 0;">Select Date:</label>
+            <input type="date" id="attendance-date-picker" class="form-control" style="width: 200px;">
+          </div>
+
+          <div id="admin-attendance-notice">
+            <span style="font-size: 13px; color: var(--text-muted);"><i class="bx bx-info-circle"></i> Admin Mode: Mark status and click Save.</span>
+          </div>
+
+          <div id="student-attendance-notice" style="display: none;">
+            <span style="font-size: 13px; color: var(--primary-500); font-weight: 700;"><i class="bx bx-lock-alt"></i> Read-Only View: Students can view attendance history.</span>
+          </div>
+
+          <button id="save-attendance-btn" class="btn btn-success">
+            <i class="bx bx-check-double"></i> Save Attendance Batch
+          </button>
+        </div>
+
+        <!-- Attendance Data Table -->
+        <div class="glass-card" style="padding: 24px;">
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Intern ID</th>
+                  <th>Student &amp; College</th>
+                  <th>Department</th>
+                  <th>Attendance Status</th>
+                  <th>Shift Remarks</th>
+                  <th>Total Attendance %</th>
+                </tr>
+              </thead>
+              <tbody id="attendance-tbody">
+                <!-- Dynamic attendance rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script type="module" src="assets/js/attendance.js"></script>
+</body>
+</html>

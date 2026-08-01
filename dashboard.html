@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - MediTrack Hospital System</title>
+  
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <div id="sidebar-container"></div>
+
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="page-content animate-fade-in">
+        <!-- Personalized Student Banner (dynamically rendered) -->
+        <div id="student-personal-notice" style="display:none;"></div>
+
+        <!-- 6 KPI Analytics Cards -->
+        <div class="grid-3" style="margin-bottom: 24px;">
+          <div class="glass-card kpi-card">
+            <div class="kpi-icon blue"><i class="bx bx-group"></i></div>
+            <div class="kpi-content">
+              <div class="kpi-title">Total Interns</div>
+              <div class="kpi-value" id="kpi-total-interns">0</div>
+              <div class="kpi-subtext">Active &amp; Completed enrolled</div>
+            </div>
+          </div>
+
+          <div class="glass-card kpi-card">
+            <div class="kpi-icon emerald"><i class="bx bx-user-check"></i></div>
+            <div class="kpi-content">
+              <div class="kpi-title">Present Today</div>
+              <div class="kpi-value" id="kpi-present-today">0</div>
+              <div class="kpi-subtext">Verified attendance</div>
+            </div>
+          </div>
+
+          <div class="glass-card kpi-card">
+            <div class="kpi-icon rose"><i class="bx bx-user-x"></i></div>
+            <div class="kpi-content">
+              <div class="kpi-title">Absent Today</div>
+              <div class="kpi-value" id="kpi-absent-today">0</div>
+              <div class="kpi-subtext">Absence recorded</div>
+            </div>
+          </div>
+
+          <div class="glass-card kpi-card">
+            <div class="kpi-icon purple"><i class="bx bx-plus-medical"></i></div>
+            <div class="kpi-content">
+              <div class="kpi-title">Doctors Today</div>
+              <div class="kpi-value" id="kpi-doctors-today">0</div>
+              <div class="kpi-subtext">Available in OPD</div>
+            </div>
+          </div>
+
+          <div class="glass-card kpi-card">
+            <div class="kpi-icon amber"><i class="bx bx-building"></i></div>
+            <div class="kpi-content">
+              <div class="kpi-title">Departments</div>
+              <div class="kpi-value" id="kpi-departments">0</div>
+              <div class="kpi-subtext">Active hospital units</div>
+            </div>
+          </div>
+
+          <div class="glass-card kpi-card">
+            <div class="kpi-icon teal"><i class="bx bx-award"></i></div>
+            <div class="kpi-content">
+              <div class="kpi-title">Training Completion</div>
+              <div class="kpi-value" id="kpi-completion-rate">0%</div>
+              <div class="kpi-subtext">Overall batch rate</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Dashboard Split Grid -->
+        <div class="grid-2" style="margin-bottom: 24px;">
+          <!-- Recent Attendance Activity -->
+          <div class="glass-card" style="padding: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+              <h3 style="font-size: 16px; font-weight: 800;">Recent Attendance Feed</h3>
+              <a href="attendance.html" class="btn btn-secondary btn-sm"><i class="bx bx-right-arrow-alt"></i> View All</a>
+            </div>
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Intern ID</th>
+                    <th>Name</th>
+                    <th>Department</th>
+                    <th>Status</th>
+                    <th>Remarks</th>
+                  </tr>
+                </thead>
+                <tbody id="recent-attendance-tbody">
+                  <!-- Dynamic rows -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Quick OPD Doctor Duty Feed -->
+          <div class="glass-card" style="padding: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+              <h3 style="font-size: 16px; font-weight: 800;">Today's OPD Doctors</h3>
+              <a href="doctor.html" class="btn btn-secondary btn-sm"><i class="bx bx-calendar"></i> OPD Schedule</a>
+            </div>
+            <div id="today-doctors-list" style="display: flex; flex-direction: column; gap: 12px;">
+              <!-- Dynamic Doctor Cards -->
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <script type="module" src="assets/js/dashboard.js"></script>
+</body>
+</html>

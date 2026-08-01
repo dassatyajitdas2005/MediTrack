@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reports &amp; Analytics - MediTrack</title>
+  
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <div id="sidebar-container"></div>
+
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="page-content animate-fade-in">
+        <!-- Control Export Actions Bar -->
+        <div class="glass-card" style="padding: 20px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <h2 style="font-size: 18px; font-weight: 800;">Hospital Training Summary Reports</h2>
+            <p style="font-size: 13px; color: var(--text-muted);">Attendance summary, training completion, doctor OPD lists</p>
+          </div>
+
+          <div style="display: flex; gap: 12px;">
+            <button id="export-csv-btn" class="btn btn-secondary">
+              <i class="bx bx-download"></i> Export CSV Data
+            </button>
+            <button id="print-report-btn" class="btn btn-primary">
+              <i class="bx bx-printer"></i> Print Summary
+            </button>
+          </div>
+        </div>
+
+        <!-- 4 Summary Metrics -->
+        <div class="grid-4" style="margin-bottom: 24px;">
+          <div class="glass-card kpi-card">
+            <div class="kpi-icon blue"><i class="bx bx-calendar-event"></i></div>
+            <div class="kpi-content">
+              <div class="kpi-title">Total Logs</div>
+              <div class="kpi-value" id="rpt-total-logs">0</div>
+            </div>
+          </div>
+
+          <div class="glass-card kpi-card">
+            <div class="kpi-icon emerald"><i class="bx bx-check-circle"></i></div>
+            <div class="kpi-content">
+              <div class="kpi-title">Present Logs</div>
+              <div class="kpi-value" id="rpt-present-count">0</div>
+            </div>
+          </div>
+
+          <div class="glass-card kpi-card">
+            <div class="kpi-icon rose"><i class="bx bx-x-circle"></i></div>
+            <div class="kpi-content">
+              <div class="kpi-title">Absent Logs</div>
+              <div class="kpi-value" id="rpt-absent-count">0</div>
+            </div>
+          </div>
+
+          <div class="glass-card kpi-card">
+            <div class="kpi-icon purple"><i class="bx bx-line-chart"></i></div>
+            <div class="kpi-content">
+              <div class="kpi-title">Avg Attendance %</div>
+              <div class="kpi-value" id="rpt-avg-attendance">0%</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 1: Intern Master Report -->
+        <div class="glass-card" style="padding: 24px; margin-bottom: 24px;">
+          <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+            <i class="bx bx-group"></i> Intern Training Master Report
+          </h3>
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Intern ID</th>
+                  <th>Name</th>
+                  <th>Course</th>
+                  <th>Department</th>
+                  <th>Days Progress</th>
+                  <th>Attendance %</th>
+                  <th>Certificate Status</th>
+                </tr>
+              </thead>
+              <tbody id="rpt-interns-tbody">
+                <!-- Dynamic intern report rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Section 2: Doctor OPD Master Report -->
+        <div class="glass-card" style="padding: 24px;">
+          <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+            <i class="bx bx-user-voice"></i> Doctor OPD Schedule Report
+          </h3>
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Doctor ID</th>
+                  <th>Name</th>
+                  <th>Department</th>
+                  <th>OPD Room</th>
+                  <th>Available Days</th>
+                  <th>OPD Timing</th>
+                </tr>
+              </thead>
+              <tbody id="rpt-doctors-tbody">
+                <!-- Dynamic doctor report rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script type="module" src="assets/js/report.js"></script>
+</body>
+</html>

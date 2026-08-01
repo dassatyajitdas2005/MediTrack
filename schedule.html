@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Training Schedule - MediTrack</title>
+  
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <div id="sidebar-container"></div>
+
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="page-content animate-fade-in">
+        <!-- Course Selector Bar -->
+        <div class="glass-card" style="padding: 20px; margin-bottom: 24px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px;">
+          <div>
+            <h3 style="font-size: 16px; font-weight: 800;">Department Training Plan &amp; Rotation</h3>
+            <p style="font-size: 13px; color: var(--text-muted);">Daily department assignments, supervisor allocations, &amp; tasks</p>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <label class="form-label" style="margin-bottom:0;">Select Course:</label>
+            <select id="schedule-course-selector" class="form-control" style="width: 250px; font-weight: 700;">
+              <option value="Diploma Pharmacy (90 Days)">Diploma Pharmacy (90 Days)</option>
+              <option value="B.Pharm (30 Days)">B.Pharm (30 Days)</option>
+              <option value="Nursing">Nursing</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Schedule Rotation Timeline List -->
+        <div id="schedule-list-container" style="display: flex; flex-direction: column; gap: 16px;">
+          <!-- Dynamic rotational daily cards -->
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script type="module" src="assets/js/schedule.js"></script>
+</body>
+</html>

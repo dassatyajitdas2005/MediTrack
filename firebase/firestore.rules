@@ -1,0 +1,60 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check role
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+    
+    function isAdmin() {
+      return request.auth != null && getUserRole() == 'admin';
+    }
+    
+    function isStudent() {
+      return request.auth != null && getUserRole() == 'student';
+    }
+    
+    function isSupervisor() {
+      return request.auth != null && getUserRole() == 'supervisor';
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin() || request.auth.uid == userId;
+    }
+
+    // Interns collection
+    match /interns/{internId} {
+      allow read: if request.auth != null;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Doctors & OPD Schedule
+    match /doctors/{doctorId} {
+      allow read: if request.auth != null;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Attendance records
+    match /attendance/{attendanceId} {
+      allow read: if request.auth != null;
+      allow create, update: if isAdmin() || isSupervisor();
+      allow delete: if isAdmin();
+    }
+
+    // Training schedule
+    match /training_schedule/{courseId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    // Certificates collection
+    match /certificates/{certId} {
+      allow read: if request.auth != null;
+      // CRITICAL SECURITY RULE: Only Admin can issue certificates
+      allow create, update, delete: if isAdmin();
+    }
+  }
+}

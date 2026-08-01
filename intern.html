@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Intern Management - MediTrack</title>
+  
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <div id="sidebar-container"></div>
+
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="page-content animate-fade-in">
+        <!-- Control Header & Filters -->
+        <div class="glass-card" style="padding: 20px; margin-bottom: 24px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px;">
+          <div style="display: flex; gap: 16px; flex: 1; min-width: 280px;">
+            <div class="search-box" style="flex: 1;">
+              <i class="bx bx-search search-icon"></i>
+              <input type="text" id="intern-search-input" class="form-control" placeholder="Search intern by name, ID, or college...">
+            </div>
+            
+            <select id="intern-dept-filter" class="form-control" style="width: 180px;">
+              <option value="">All Departments</option>
+              <option value="Pharmacy">Pharmacy</option>
+              <option value="OPD Store">OPD Store</option>
+              <option value="General Surgery">General Surgery</option>
+              <option value="Pathology Lab">Pathology Lab</option>
+              <option value="Physiotherapy OPD">Physiotherapy OPD</option>
+            </select>
+
+            <select id="intern-course-filter" class="form-control" style="width: 180px;">
+              <option value="">All Courses</option>
+              <option value="Diploma Pharmacy">Diploma Pharmacy</option>
+              <option value="B.Pharm">B.Pharm</option>
+              <option value="Nursing">Nursing</option>
+              <option value="DMLT">DMLT</option>
+              <option value="Physiotherapy">Physiotherapy</option>
+            </select>
+          </div>
+
+          <button id="add-intern-btn" class="btn btn-primary">
+            <i class="bx bx-plus"></i> Add New Intern
+          </button>
+        </div>
+
+        <!-- Intern Table -->
+        <div class="glass-card" style="padding: 24px;">
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Intern ID</th>
+                  <th>Student &amp; College</th>
+                  <th>Course</th>
+                  <th>Department</th>
+                  <th>Training Dates</th>
+                  <th>Days Progress</th>
+                  <th>Attendance %</th>
+                  <th>Certificate</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="intern-tbody">
+                <!-- Dynamic Rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Add/Edit Intern Modal -->
+  <div class="modal-overlay" id="intern-modal">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 id="intern-modal-title">Add New Intern</h3>
+        <button class="modal-close-btn" id="close-intern-modal"><i class="bx bx-x"></i></button>
+      </div>
+      <form id="intern-form">
+        <div class="modal-body">
+          <input type="hidden" id="intern-id-input">
+          
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label">Full Name</label>
+              <input type="text" id="intern-name" class="form-control" required placeholder="e.g. Rahul Verma">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email Address</label>
+              <input type="email" id="intern-email" class="form-control" required placeholder="intern@meditrack.com">
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label">Course / Program</label>
+              <select id="intern-course" class="form-control" required>
+                <option value="Diploma Pharmacy (90 Days)">Diploma Pharmacy (90 Days)</option>
+                <option value="B.Pharm (30 Days)">B.Pharm (30 Days)</option>
+                <option value="Nursing (30 Days)">Nursing (30 Days)</option>
+                <option value="GNM">GNM</option>
+                <option value="ANM">ANM</option>
+                <option value="DMLT">DMLT</option>
+                <option value="Physiotherapy">Physiotherapy</option>
+                <option value="Other Courses">Other Courses</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">College / Institute</label>
+              <input type="text" id="intern-college" class="form-control" required placeholder="e.g. Apex Pharmacy College">
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label">Assigned Department</label>
+              <select id="intern-department" class="form-control" required>
+                <option value="Pharmacy">Pharmacy</option>
+                <option value="OPD Store">OPD Store</option>
+                <option value="General Surgery">General Surgery</option>
+                <option value="Pathology Lab">Pathology Lab</option>
+                <option value="Physiotherapy OPD">Physiotherapy OPD</option>
+                <option value="Emergency Ward">Emergency Ward</option>
+                <option value="General Medicine">General Medicine</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Total Training Days</label>
+              <input type="number" id="intern-total-days" class="form-control" required value="90">
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label">Joining Date</label>
+              <input type="date" id="intern-joining" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Ending Date</label>
+              <input type="date" id="intern-ending" class="form-control" required>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top: 10px; padding: 14px; background: var(--bg-main); border-radius: var(--radius-md);">
+            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 700; color: var(--text-main);">
+              <input type="checkbox" id="intern-cert-issued" style="width: 18px; height: 18px; accent-color: var(--primary-500);">
+              Certificate Issued ☑ (Admin Only)
+            </label>
+            <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px; margin-left: 28px;">
+              Check this box to grant training completion certificate clearance to the student.
+            </p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="cancel-intern-modal">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="bx bx-save"></i> Save Intern Record</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module" src="assets/js/intern.js"></script>
+</body>
+</html>
