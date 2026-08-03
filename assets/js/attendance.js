@@ -1,6 +1,7 @@
 /* MediTrack - Attendance Module Controller */
+import { db, DATABASE_MODE } from './db.js';
+import * as fbDb from './firebase-db.js';
 
-import { db } from './db.js';
 import { auth } from './auth.js';
 import { renderLayout } from './app.js';
 
@@ -39,10 +40,18 @@ function initAttendanceModule() {
   }
 }
 
-function loadAttendanceData() {
+async function loadAttendanceData() {
   const dateStr = document.getElementById('attendance-date-picker').value;
-  const interns = db.getInterns();
-  const attendanceList = db.getAttendance();
+
+  const interns =
+    DATABASE_MODE === "firebase"
+      ? await fbDb.getInterns()
+      : db.getInterns();
+
+  const attendanceList =
+    DATABASE_MODE === "firebase"
+      ? await fbDb.getAttendance()
+      : db.getAttendance();
   const isAdmin = auth.isAdmin();
   const isStudent = auth.isStudent();
   const user = auth.getCurrentUser();
@@ -101,7 +110,7 @@ function loadAttendanceData() {
   }).join('');
 }
 
-function handleSaveBatchAttendance() {
+async function handleSaveBatchAttendance() {
   const dateStr = document.getElementById('attendance-date-picker').value;
   const statusSelects = document.querySelectorAll('.attendance-status-select');
   const remarksInputs = document.querySelectorAll('.attendance-remarks-input');
@@ -112,12 +121,25 @@ function handleSaveBatchAttendance() {
     const remarksInput = Array.from(remarksInputs).find(input => input.getAttribute('data-intern-id') === internId);
     const remarks = remarksInput ? remarksInput.value : '';
 
-    db.markAttendance({
-      internId,
-      date: dateStr,
-      status,
-      remarks
-    });
+    if (DATABASE_MODE === "firebase") {
+
+      await fbDb.markAttendance({
+        internId,
+        date: dateStr,
+        status,
+        remarks
+      });
+
+    } else {
+
+      db.markAttendance({
+        internId,
+        date: dateStr,
+        status,
+        remarks
+      });
+
+    }
   });
 
   alert(`Attendance successfully recorded for ${dateStr}!`);

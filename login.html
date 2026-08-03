@@ -1,15 +1,16 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login - MediTrack Hospital Management</title>
-  
+
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/css/theme.css">
   <link rel="stylesheet" href="assets/css/components.css">
   <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
-  
+
   <style>
     body.login-body {
       display: flex;
@@ -21,7 +22,7 @@
       animation: shimmer 15s ease infinite;
       padding: 20px;
     }
-    
+
     .login-container {
       width: 100%;
       max-width: 440px;
@@ -57,6 +58,7 @@
     }
   </style>
 </head>
+
 <body class="login-body">
 
   <div class="glass-card login-container animate-fade-in">
@@ -64,8 +66,10 @@
       <div class="login-logo">
         <i class="bx bx-plus-medical"></i>
       </div>
-      <h2 style="font-size: 24px; font-weight: 800; color: var(--text-main);">Medi<span style="color: var(--primary-500);">Track</span> Portal</h2>
-      <p style="font-size: 14px; color: var(--text-muted); margin-top: 4px;">Hospital Internship &amp; Training System</p>
+      <h2 style="font-size: 24px; font-weight: 800; color: var(--text-main);">Medi<span
+          style="color: var(--primary-500);">Track</span> Portal</h2>
+      <p style="font-size: 14px; color: var(--text-muted); margin-top: 4px;">Hospital Internship &amp; Training System
+      </p>
     </div>
 
     <form id="login-form">
@@ -73,7 +77,8 @@
         <label class="form-label" for="login-email">Email Address</label>
         <div class="search-box">
           <i class="bx bx-envelope search-icon"></i>
-          <input type="email" id="login-email" class="form-control" placeholder="name@hospital.com" required value="admin@meditrack.com">
+          <input type="email" id="login-email" class="form-control" placeholder="name@hospital.com" required
+            value="admin@meditrack.com">
         </div>
       </div>
 
@@ -81,7 +86,8 @@
         <label class="form-label" for="login-password">Password</label>
         <div class="search-box">
           <i class="bx bx-lock-alt search-icon"></i>
-          <input type="password" id="login-password" class="form-control" placeholder="••••••••" required value="password123">
+          <input type="password" id="login-password" class="form-control" placeholder="••••••••" required
+            value="password123">
         </div>
       </div>
 
@@ -102,7 +108,7 @@
     <div style="text-align: center; margin-top: 24px; font-size: 12px; color: var(--text-muted);">
       Quick Demo Access (1-Click Login):
     </div>
-    
+
     <div class="demo-role-grid">
       <button class="btn btn-secondary btn-sm demo-login-btn" data-email="admin@meditrack.com" data-role="admin">
         <i class="bx bx-shield-quarter"></i> Admin
@@ -110,31 +116,43 @@
       <button class="btn btn-secondary btn-sm demo-login-btn" data-email="intern@meditrack.com" data-role="student">
         <i class="bx bx-user"></i> Student
       </button>
-      <button class="btn btn-secondary btn-sm demo-login-btn" data-email="supervisor@meditrack.com" data-role="supervisor">
+      <button class="btn btn-secondary btn-sm demo-login-btn" data-email="supervisor@meditrack.com"
+        data-role="supervisor">
         <i class="bx bx-plus-circle"></i> Supervisor
       </button>
     </div>
   </div>
 
   <script type="module">
-    import { auth } from './assets/js/auth.js';
 
-    document.getElementById('login-form').addEventListener('submit', (e) => {
+    import "./assets/js/firebase-config.js";
+    import { auth } from "./assets/js/auth.js";
+
+    document.getElementById("login-form").addEventListener("submit", (e) => {
       e.preventDefault();
-      const email = document.getElementById('login-email').value;
-      const role = document.getElementById('login-role').value;
+
+      const email = document.getElementById("login-email").value;
+      const role = document.getElementById("login-role").value;
+
       auth.login(email, role);
-      window.location.href = 'dashboard.html';
+
+      window.location.href = "dashboard.html";
     });
 
-    document.querySelectorAll('.demo-login-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const email = btn.getAttribute('data-email');
-        const role = btn.getAttribute('data-role');
+    document.querySelectorAll(".demo-login-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+
+        const email = btn.getAttribute("data-email");
+        const role = btn.getAttribute("data-role");
+
         auth.login(email, role);
-        window.location.href = 'dashboard.html';
+
+        window.location.href = "dashboard.html";
       });
     });
+
   </script>
+
 </body>
+
 </html>

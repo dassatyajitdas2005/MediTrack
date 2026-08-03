@@ -1,6 +1,7 @@
 /* MediTrack - Doctor OPD Schedule Controller */
 
-import { db } from './db.js';
+import { db, DATABASE_MODE } from './db.js';
+import * as fbDb from './firebase-db.js';
 import { auth } from './auth.js';
 import { renderLayout } from './app.js';
 
@@ -40,8 +41,13 @@ function initDoctorModule() {
   document.getElementById('cancel-doctor-modal')?.addEventListener('click', closeDoctorModal);
 }
 
-function loadDoctors() {
-  currentDoctors = db.getDoctors();
+async function loadDoctors() {
+  if (DATABASE_MODE === 'firebase') {
+    const fsDoctors = await fbDb.getDoctors();
+    currentDoctors = fsDoctors.length > 0 ? fsDoctors : db.getDoctors();
+  } else {
+    currentDoctors = db.getDoctors();
+  }
   renderOPDSchedule();
 }
 
@@ -116,11 +122,15 @@ function renderOPDSchedule() {
       btn.addEventListener('click', (e) => openDoctorModal(e.currentTarget.getAttribute('data-id')));
     });
     document.querySelectorAll('.delete-doc-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
+      btn.addEventListener('click', async (e) => {
         const id = e.currentTarget.getAttribute('data-id');
         if (confirm(`Delete Doctor ${id}?`)) {
-          db.deleteDoctor(id);
-          loadDoctors();
+          if (DATABASE_MODE === 'firebase') {
+            await fbDb.deleteDoctor(id);
+          } else {
+            db.deleteDoctor(id);
+          }
+          await loadDoctors();
         }
       });
     });
@@ -158,10 +168,10 @@ function closeDoctorModal() {
   document.getElementById('doctor-modal').classList.remove('active');
 }
 
-function handleDoctorFormSubmit(e) {
+async function handleDoctorFormSubmit(e) {
   e.preventDefault();
   const doctorId = document.getElementById('doctor-id-input').value;
-  const isEditing = currentDoctors.some(d => d.doctorId === doctorId);
+  const isEditing = currentDoctors.some(d => d.doctorId === doctorId || d.id === doctorId);
 
   const selectedDays = Array.from(document.querySelectorAll('.day-checkbox:checked')).map(cb => cb.value);
 
@@ -175,9 +185,14 @@ function handleDoctorFormSubmit(e) {
     opdTiming: document.getElementById('doc-opd-timing').value
   };
 
-  if (isEditing) db.updateDoctor(doctorId, formData);
-  else db.addDoctor(formData);
+  if (DATABASE_MODE === 'firebase') {
+    if (isEditing) await fbDb.updateDoctor(doctorId, formData);
+    else await fbDb.addDoctor(formData);
+  } else {
+    if (isEditing) db.updateDoctor(doctorId, formData);
+    else db.addDoctor(formData);
+  }
 
   closeDoctorModal();
-  loadDoctors();
+  await loadDoctors();
 }

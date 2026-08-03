@@ -1,15 +1,17 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Intern Management - MediTrack</title>
-  
+
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/css/theme.css">
   <link rel="stylesheet" href="assets/css/components.css">
   <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
 </head>
+
 <body>
   <div class="app-container">
     <div id="sidebar-container"></div>
@@ -19,13 +21,15 @@
 
       <main class="page-content animate-fade-in">
         <!-- Control Header & Filters -->
-        <div class="glass-card" style="padding: 20px; margin-bottom: 24px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px;">
+        <div class="glass-card"
+          style="padding: 20px; margin-bottom: 24px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px;">
           <div style="display: flex; gap: 16px; flex: 1; min-width: 280px;">
             <div class="search-box" style="flex: 1;">
               <i class="bx bx-search search-icon"></i>
-              <input type="text" id="intern-search-input" class="form-control" placeholder="Search intern by name, ID, or college...">
+              <input type="text" id="intern-search-input" class="form-control"
+                placeholder="Search intern by name, ID, or college...">
             </div>
-            
+
             <select id="intern-dept-filter" class="form-control" style="width: 180px;">
               <option value="">All Departments</option>
               <option value="Pharmacy">Pharmacy</option>
@@ -87,7 +91,7 @@
       <form id="intern-form">
         <div class="modal-body">
           <input type="hidden" id="intern-id-input">
-          
+
           <div class="grid-2">
             <div class="form-group">
               <label class="form-label">Full Name</label>
@@ -115,7 +119,8 @@
             </div>
             <div class="form-group">
               <label class="form-label">College / Institute</label>
-              <input type="text" id="intern-college" class="form-control" required placeholder="e.g. Apex Pharmacy College">
+              <input type="text" id="intern-college" class="form-control" required
+                placeholder="e.g. Apex Pharmacy College">
             </div>
           </div>
 
@@ -123,10 +128,9 @@
             <div class="form-group">
               <label class="form-label">Assigned Department</label>
               <select id="intern-department" class="form-control" required>
-                <option value="Pharmacy">Pharmacy</option>
-                <option value="OPD Store">OPD Store</option>
-                <option value="General Surgery">General Surgery</option>
-                <option value="Pathology Lab">Pathology Lab</option>
+                <option value="Outdoor">Outdoor</option>
+                <option value="Indoor">Indoor</option>
+                <option value="Camp">Camp</option>
                 <option value="Physiotherapy OPD">Physiotherapy OPD</option>
                 <option value="Emergency Ward">Emergency Ward</option>
                 <option value="General Medicine">General Medicine</option>
@@ -149,9 +153,12 @@
             </div>
           </div>
 
-          <div class="form-group" style="margin-top: 10px; padding: 14px; background: var(--bg-main); border-radius: var(--radius-md);">
-            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 700; color: var(--text-main);">
-              <input type="checkbox" id="intern-cert-issued" style="width: 18px; height: 18px; accent-color: var(--primary-500);">
+          <div class="form-group"
+            style="margin-top: 10px; padding: 14px; background: var(--bg-main); border-radius: var(--radius-md);">
+            <label
+              style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 700; color: var(--text-main);">
+              <input type="checkbox" id="intern-cert-issued"
+                style="width: 18px; height: 18px; accent-color: var(--primary-500);">
               Certificate Issued ☑ (Admin Only)
             </label>
             <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px; margin-left: 28px;">
@@ -169,4 +176,5 @@
 
   <script type="module" src="assets/js/intern.js"></script>
 </body>
+
 </html>

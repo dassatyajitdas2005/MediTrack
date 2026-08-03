@@ -265,4 +265,5 @@ class DatabaseService {
   }
 }
 
+export const DATABASE_MODE = localStorage.getItem('meditrack_db_mode') || 'demo';
 export const db = new DatabaseService();

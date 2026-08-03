@@ -1,6 +1,7 @@
 /* MediTrack - Intern Management Controller */
 
-import { db } from './db.js';
+import { db, DATABASE_MODE } from './db.js';
+import * as fbDb from './firebase-db.js';
 import { auth } from './auth.js';
 import { renderLayout } from './app.js';
 
@@ -35,8 +36,13 @@ function initInternModule() {
   document.getElementById('cancel-intern-modal')?.addEventListener('click', closeInternModal);
 }
 
-function loadInterns() {
-  currentInterns = db.getInterns();
+async function loadInterns() {
+  if (DATABASE_MODE === 'firebase') {
+    const fsInterns = await fbDb.getInterns();
+    currentInterns = fsInterns.length > 0 ? fsInterns : db.getInterns();
+  } else {
+    currentInterns = db.getInterns();
+  }
   renderInternTable(currentInterns);
 }
 
@@ -107,11 +113,15 @@ function renderInternTable(interns) {
     });
 
     document.querySelectorAll('.delete-intern-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
+      btn.addEventListener('click', async (e) => {
         const id = e.currentTarget.getAttribute('data-id');
         if (confirm(`Are you sure you want to delete intern ${id}?`)) {
-          db.deleteIntern(id);
-          loadInterns();
+          if (DATABASE_MODE === 'firebase') {
+            await fbDb.deleteIntern(id);
+          } else {
+            db.deleteIntern(id);
+          }
+          await loadInterns();
         }
       });
     });
@@ -167,11 +177,13 @@ function closeInternModal() {
   document.getElementById('intern-modal').classList.remove('active');
 }
 
-function handleInternFormSubmit(e) {
+async function handleInternFormSubmit(e) {
   e.preventDefault();
   const internId = document.getElementById('intern-id-input').value;
-  const isEditing = currentInterns.some(i => i.internId === internId);
+  const isEditing = currentInterns.some(i => i.internId === internId || i.id === internId);
   const certIssued = document.getElementById('intern-cert-issued').checked;
+
+  const existingIntern = currentInterns.find(i => i.internId === internId || i.id === internId);
 
   const formData = {
     internId,
@@ -183,24 +195,31 @@ function handleInternFormSubmit(e) {
     joiningDate: document.getElementById('intern-joining').value,
     endingDate: document.getElementById('intern-ending').value,
     totalTrainingDays: parseInt(document.getElementById('intern-total-days').value) || 30,
-    completedDays: isEditing ? (db.getInternById(internId)?.completedDays || 0) : 0,
-    attendancePercentage: isEditing ? (db.getInternById(internId)?.attendancePercentage || 100) : 100,
+    completedDays: isEditing ? (existingIntern?.completedDays || 0) : 0,
+    attendancePercentage: isEditing ? (existingIntern?.attendancePercentage || 100) : 100,
     certificateIssued: certIssued,
     status: certIssued ? 'completed' : 'active'
   };
 
-  if (isEditing) {
-    db.updateIntern(internId, formData);
+  if (DATABASE_MODE === 'firebase') {
+    if (isEditing) {
+      await fbDb.updateIntern(internId, formData);
+    } else {
+      await fbDb.addIntern(formData);
+    }
   } else {
-    db.addIntern(formData);
-  }
-
-  if (certIssued) {
-    db.setCertificateIssued(internId, true);
-  } else {
-    db.setCertificateIssued(internId, false);
+    if (isEditing) {
+      db.updateIntern(internId, formData);
+    } else {
+      db.addIntern(formData);
+    }
+    if (certIssued) {
+      db.setCertificateIssued(internId, true);
+    } else {
+      db.setCertificateIssued(internId, false);
+    }
   }
 
   closeInternModal();
-  loadInterns();
+  await loadInterns();
 }

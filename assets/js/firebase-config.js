@@ -1,19 +1,27 @@
-/* MediTrack - Firebase SDK Configuration & Initialization */
+// Firebase SDK Imports
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
-// Config holder for Firebase (Replace with your actual Firebase project config when deploying)
-export const firebaseConfig = {
-  apiKey: localStorage.getItem('meditrack_fb_apiKey') || "AIzaSyDemoKey_MediTrackHospital2026",
-  authDomain: localStorage.getItem('meditrack_fb_authDomain') || "meditrack-hospital.firebaseapp.com",
-  projectId: localStorage.getItem('meditrack_fb_projectId') || "meditrack-hospital",
-  storageBucket: localStorage.getItem('meditrack_fb_storageBucket') || "meditrack-hospital.appspot.com",
-  messagingSenderId: localStorage.getItem('meditrack_fb_messagingSenderId') || "847291048291",
-  appId: localStorage.getItem('meditrack_fb_appId') || "1:847291048291:web:a1b2c3d4e5f67890"
+// Firebase Configuration
+const firebaseConfig = {
+    apiKey: "AIzaSyCO8vjY0P6AC68bSpYeNXZgjU_xDvldOt8",
+    authDomain: "meditrack-e980f.firebaseapp.com",
+    projectId: "meditrack-e980f",
+    storageBucket: "meditrack-e980f.firebasestorage.app",
+    messagingSenderId: "508836617924",
+    appId: "1:508836617924:web:75381b9fd9ea4f2257f391",
+    measurementId: "G-CEGFGQKDD6"
 };
 
-// State flag to check if actual live Firebase credentials are present
-export const isFirebaseConfigured = () => {
-  const key = localStorage.getItem('meditrack_fb_apiKey');
-  return key && key.length > 20 && !key.includes('DemoKey');
-};
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
 
-console.log(`[MediTrack Engine] Firebase Configured: ${isFirebaseConfigured() ? 'YES (Live Firestore Mode)' : 'NO (Interactive Standalone Demo DB Mode)'}`);
+// Firebase Services
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// Export Services
+export { auth, db };
+
+console.log("✅ Firebase Connected Successfully");
