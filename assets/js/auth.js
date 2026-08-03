@@ -1,6 +1,7 @@
 /* MediTrack - Role-Based Authentication & Session Manager */
 
-import { db } from './db.js';
+import { db, DATABASE_MODE } from './db.js';
+import * as firebaseAuth from './firebase-auth.js';
 
 class AuthService {
   constructor() {
@@ -17,6 +18,11 @@ class AuthService {
   }
 
   getCurrentUser() {
+
+    if (DATABASE_MODE === "firebase") {
+      return firebaseAuth.getCurrentUser();
+    }
+
     const userJson = localStorage.getItem(this.currentUserKey);
     return userJson ? JSON.parse(userJson) : null;
   }
@@ -25,10 +31,13 @@ class AuthService {
     localStorage.setItem(this.currentUserKey, JSON.stringify(user));
   }
 
-  login(email, role = 'admin') {
+  async login(email, password = "", role = "admin") {
+    if (DATABASE_MODE === "firebase") {
+      return await firebaseAuth.login(email, password);
+    }
     const users = db.getCollection('users');
     let user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-    
+
     if (!user) {
       // Create user session dynamically if email provided
       user = {
@@ -46,7 +55,7 @@ class AuthService {
   switchRole(targetRole) {
     const users = db.getCollection('users');
     let user = users.find(u => u.role === targetRole);
-    
+
     if (!user) {
       user = {
         uid: 'usr_switch_' + targetRole,
@@ -57,13 +66,18 @@ class AuthService {
         internId: targetRole === 'student' ? 'INT-101' : null
       };
     }
-    
+
     this.setUser(user);
     console.log(`[MediTrack Auth] Switched active session role to: ${targetRole}`);
     window.location.reload();
   }
 
-  logout() {
+  async logout() {
+
+    if (DATABASE_MODE === "firebase") {
+      return await firebaseAuth.logout();
+    }
+
     localStorage.removeItem(this.currentUserKey);
     window.location.href = 'login.html';
   }

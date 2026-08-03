@@ -26,7 +26,7 @@ export async function registerUser(email, password, role = "student", extraData 
     const userData = {
       uid: user.uid,
       email: email.toLowerCase(),
-      role: role,
+      role: "student",
       name: extraData.name || email.split("@")[0].toUpperCase(),
       department: extraData.department || (role === "admin" ? "Administration" : "Pharmacy"),
       createdAt: new Date().toISOString(),
@@ -47,7 +47,7 @@ export async function registerUser(email, password, role = "student", extraData 
 /**
  * Main Firebase Login Function
  */
-export async function login(email, password, role = "admin") {
+export async function login(email, password) {
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
@@ -64,7 +64,7 @@ export async function login(email, password, role = "admin") {
       userData = {
         uid: user.uid,
         email: user.email,
-        role: role,
+        role: "student",
         name: email.split("@")[0].toUpperCase(),
         department: role === "admin" ? "Administration" : "Pharmacy"
       };

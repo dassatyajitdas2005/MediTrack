@@ -128,29 +128,50 @@
     import "./assets/js/firebase-config.js";
     import { auth } from "./assets/js/auth.js";
 
-    document.getElementById("login-form").addEventListener("submit", (e) => {
+    document.getElementById("login-form").addEventListener("submit", async (e) => {
+
       e.preventDefault();
 
       const email = document.getElementById("login-email").value;
+      const password = document.getElementById("login-password").value;
       const role = document.getElementById("login-role").value;
 
-      auth.login(email, role);
+      try {
 
-      window.location.href = "dashboard.html";
+        await auth.login(email, password, role);
+
+        window.location.href = "dashboard.html";
+
+      } catch (error) {
+
+        alert("Login Failed\n\n" + error.message);
+
+      }
+
     });
 
     document.querySelectorAll(".demo-login-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
 
-        const email = btn.getAttribute("data-email");
-        const role = btn.getAttribute("data-role");
+      btn.addEventListener("click", async () => {
 
-        auth.login(email, role);
+        const email = btn.dataset.email;
+        const role = btn.dataset.role;
 
-        window.location.href = "dashboard.html";
+        try {
+
+          await auth.login(email, "password123", role);
+
+          window.location.href = "dashboard.html";
+
+        } catch (error) {
+
+          alert(error.message);
+
+        }
+
       });
-    });
 
+    });
   </script>
 
 </body>
