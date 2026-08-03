@@ -1,6 +1,6 @@
 /* MediTrack - Reports & Analytics Aggregator Controller */
-
-import { db } from './db.js';
+import { db, DATABASE_MODE } from './db.js';
+import * as fbDb from './firebase-db.js';
 import { renderLayout } from './app.js';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -16,10 +16,14 @@ function initReports() {
   document.getElementById('export-csv-btn')?.addEventListener('click', exportReportsCSV);
   document.getElementById('print-report-btn')?.addEventListener('click', () => window.print());
 }
+async function renderAttendanceSummary() {
+  const interns = DATABASE_MODE === "firebase"
+    ? await fbDb.getInterns()
+    : db.getInterns();
 
-function renderAttendanceSummary() {
-  const interns = db.getInterns();
-  const attendance = db.getAttendance();
+  const attendance = DATABASE_MODE === "firebase"
+    ? await fbDb.getAttendance()
+    : db.getAttendance();
 
   const totalLogs = attendance.length;
   const presentCount = attendance.filter(a => a.status === 'Present').length;
@@ -32,8 +36,10 @@ function renderAttendanceSummary() {
   document.getElementById('rpt-avg-attendance').innerText = `${avgAttendance}%`;
 }
 
-function renderDoctorReport() {
-  const doctors = db.getDoctors();
+async function renderDoctorReport() {
+  const doctors = DATABASE_MODE === "firebase"
+    ? await fbDb.getDoctors()
+    : db.getDoctors();
   const tbody = document.getElementById('rpt-doctors-tbody');
   if (!tbody) return;
 
@@ -49,8 +55,10 @@ function renderDoctorReport() {
   `).join('');
 }
 
-function renderInternReport() {
-  const interns = db.getInterns();
+async function renderInternReport() {
+  const interns = DATABASE_MODE === "firebase"
+    ? await fbDb.getInterns()
+    : db.getInterns();
   const tbody = document.getElementById('rpt-interns-tbody');
   if (!tbody) return;
 
@@ -71,10 +79,12 @@ function renderInternReport() {
   `).join('');
 }
 
-function exportReportsCSV() {
-  const interns = db.getInterns();
+async function exportReportsCSV() {
+  const interns = DATABASE_MODE === "firebase"
+    ? await fbDb.getInterns()
+    : db.getInterns();
   let csvContent = "data:text/csv;charset=utf-8,Intern ID,Name,Course,Department,College,Completed Days,Total Days,Attendance %,Certificate Status\n";
-  
+
   interns.forEach(i => {
     csvContent += `${i.internId},"${i.name}","${i.course}","${i.department}","${i.college}",${i.completedDays},${i.totalTrainingDays},${i.attendancePercentage}%,${i.certificateIssued ? 'Issued' : 'Pending'}\n`;
   });
