@@ -47,8 +47,15 @@ export async function registerUser(email, password, role = "student", extraData 
 /**
  * Main Firebase Login Function
  */
-export async function login(email, password) {
+export async function login(email, password, role = "student") {
+
+  console.log("======== LOGIN ========");
+  console.log("Project:", auth.app.options.projectId);
+  console.log("Email:", email);
+  console.log("Password:", password);
+
   try {
+
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
 
@@ -57,26 +64,40 @@ export async function login(email, password) {
     const userDoc = await getDoc(userDocRef);
 
     let userData;
+
     if (userDoc.exists()) {
+
       userData = userDoc.data();
+
     } else {
+
       // Fallback profile if record not yet created in Firestore
       userData = {
         uid: user.uid,
         email: user.email,
-        role: "student",
+        role: role,
         name: email.split("@")[0].toUpperCase(),
         department: role === "admin" ? "Administration" : "Pharmacy"
       };
+
       await setDoc(userDocRef, userData);
+
     }
 
     localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(userData));
+
     return userData;
+
   } catch (error) {
-    console.error("[FirebaseAuth] Login Error:", error);
+
+    console.log("Error Code:", error.code);
+    console.log("Error Message:", error.message);
+    console.log(error);
+
     throw error;
+
   }
+
 }
 
 /**
