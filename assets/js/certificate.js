@@ -1,17 +1,40 @@
 /* MediTrack - Hospital Training Completion Certificate Renderer */
 
-import { db } from './db.js';
+import { db, DATABASE_MODE } from './db.js';
+import * as fbDb from './firebase-db.js';
 import { auth } from './auth.js';
 
-export function openCertificateModal(internId) {
-  const intern = db.getInternById(internId);
+export async function openCertificateModal(internId) {
+  let intern;
+
+  if (DATABASE_MODE === "firebase") {
+    const interns = await fbDb.getInterns();
+    intern = interns.find(i => i.internId === internId);
+  } else {
+    intern = db.getInternById(internId);
+  }
   if (!intern) return;
 
-  const cert = db.getCertificate(internId) || {
-    issued: intern.certificateIssued,
-    issuedDate: new Date().toISOString().split('T')[0],
-    approvedBy: "Dr. A. K. Sharma (Medical Superintendent)"
-  };
+  let cert;
+
+  if (DATABASE_MODE === "firebase") {
+
+    // Abhi temporary
+    cert = {
+      issued: intern.certificateIssued,
+      issuedDate: new Date().toISOString().split("T")[0],
+      approvedBy: "Dr. A. K. Sharma (Medical Superintendent)"
+    };
+
+  } else {
+
+    cert = db.getCertificate(internId) || {
+      issued: intern.certificateIssued,
+      issuedDate: new Date().toISOString().split("T")[0],
+      approvedBy: "Dr. A. K. Sharma (Medical Superintendent)"
+    };
+
+  }
 
   let modal = document.getElementById('certificate-modal');
   if (!modal) {

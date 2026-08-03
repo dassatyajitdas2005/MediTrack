@@ -1,6 +1,8 @@
 /* MediTrack - Training Progress Controller */
 
-import { db } from './db.js';
+import { db, DATABASE_MODE } from './db.js';
+import * as fbDb from './firebase-db.js';
+
 import { auth } from './auth.js';
 import { renderLayout } from './app.js';
 
@@ -16,8 +18,11 @@ function initTrainingModule() {
   document.getElementById('training-course-filter')?.addEventListener('change', loadTrainingProgress);
 }
 
-function loadTrainingProgress() {
-  const interns = db.getInterns();
+async function loadTrainingProgress() {
+  const interns =
+    DATABASE_MODE === "firebase"
+      ? await fbDb.getInterns()
+      : db.getInterns();
   const isStudent = auth.isStudent();
   const user = auth.getCurrentUser();
 
