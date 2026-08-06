@@ -34,6 +34,17 @@ export function renderLayout(activePage = 'dashboard') {
             <span class="icon"><i class="bx bx-group"></i></span>
             <span>Intern Management</span>
           </a>
+
+
+          <a href="user.html" class="nav-item ${activePage === 'user' ? 'active' : ''}">
+            <span class="icon">
+                <i class="bx bx-user-circle"></i>
+            </span>
+            <span>User Management</span>
+          </a>
+
+
+
           <a href="doctor.html" class="nav-item ${activePage === 'doctor' ? 'active' : ''}">
             <span class="icon"><i class="bx bx-user-voice"></i></span>
             <span>Doctor OPD Schedule</span>
@@ -86,6 +97,7 @@ export function renderLayout(activePage = 'dashboard') {
   const navbarContainer = document.getElementById('navbar-container');
   if (navbarContainer) {
     const pageTitles = {
+      user: { title: "User Management", subtitle: "Manage Admin, Students & Supervisors" },
       dashboard: { title: "Hospital Dashboard", subtitle: "Real-time internship & OPD analytics summary" },
       intern: { title: "Intern Management", subtitle: "Manage intern enrollment, courses, & progress" },
       doctor: { title: "Doctor OPD Schedule", subtitle: "Hospital OPD timings & day-wise availability" },

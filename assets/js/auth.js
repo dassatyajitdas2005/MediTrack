@@ -9,13 +9,6 @@ class AuthService {
     this.initSession();
   }
 
-  initSession() {
-    // If no user is logged in, default to Admin for quick demoing
-    if (!localStorage.getItem(this.currentUserKey)) {
-      const users = db.getCollection('users');
-      this.setUser(users[0]); // Default to Admin
-    }
-  }
 
   getCurrentUser() {
 

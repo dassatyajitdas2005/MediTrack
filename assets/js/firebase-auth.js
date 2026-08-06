@@ -26,7 +26,7 @@ export async function registerUser(email, password, role = "student", extraData 
     const userData = {
       uid: user.uid,
       email: email.toLowerCase(),
-      role: "student",
+      role: role,
       name: extraData.name || email.split("@")[0].toUpperCase(),
       department: extraData.department || (role === "admin" ? "Administration" : "Pharmacy"),
       createdAt: new Date().toISOString(),

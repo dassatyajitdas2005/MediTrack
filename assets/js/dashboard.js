@@ -14,16 +14,16 @@ function loadDashboardData() {
   const interns = db.getInterns();
   const doctors = db.getDoctors();
   const attendance = db.getAttendance();
-  
+
   const todayStr = new Date().toISOString().split('T')[0];
-  const todayAttendance = attendance.filter(a => a.date === todayStr || true); // fallback demo
+  const todayAttendance = attendance.filter(a => a.date === todayStr);
 
   // KPI Calculations
   const totalInterns = interns.length;
   const presentToday = todayAttendance.filter(a => a.status === 'Present').length;
   const absentToday = todayAttendance.filter(a => a.status === 'Absent').length;
   const totalDoctors = doctors.length;
-  
+
   // Unique Departments
   const deptSet = new Set(interns.map(i => i.department).concat(doctors.map(d => d.department)));
   const totalDepts = deptSet.size;
