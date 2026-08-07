@@ -1,78 +1,62 @@
-/* MediTrack - Role-Based Authentication & Session Manager */
+/* MediTrack - Role-Based Authentication & Session Manager (Firebase Only) */
 
-import { db, DATABASE_MODE } from './db.js';
 import * as firebaseAuth from './firebase-auth.js';
 
 class AuthService {
   constructor() {
-    this.currentUserKey = 'meditrack_current_user';
-    this.initSession();
+    this.currentUserKey = 'meditrack_firebase_user';
+    // Page khulte hi immediate check — agar cache nahi hai toh login pe bhejo
+    this.syncRedirect();
   }
 
+  /**
+   * Immediate sync check (localStorage cache se)
+   * Firebase async hota hai, isliye pehle cache check karte hain
+   */
+  syncRedirect() {
+    const currentPath = window.location.pathname.split('/').pop();
+    const isPublicPage = ['login.html', 'signup.html', 'index.html', ''].includes(currentPath);
+    const cached = localStorage.getItem(this.currentUserKey);
+
+    if (!cached && !isPublicPage) {
+      window.location.replace('login.html');
+    }
+  }
+
+  /**
+   * Async verification — har page ke JS mein call karo
+   * Example: await auth.init();
+   */
+  async init() {
+    return new Promise((resolve) => {
+      firebaseAuth.checkSession((userData) => {
+        const currentPath = window.location.pathname.split('/').pop();
+        const isPublicPage = ['login.html', 'signup.html', 'index.html', ''].includes(currentPath);
+
+        if (!userData && !isPublicPage) {
+          window.location.replace('login.html');
+          resolve(null);
+          return;
+        }
+        resolve(userData);
+      });
+    });
+  }
 
   getCurrentUser() {
-
-    if (DATABASE_MODE === "firebase") {
-      return firebaseAuth.getCurrentUser();
-    }
-
-    const userJson = localStorage.getItem(this.currentUserKey);
-    return userJson ? JSON.parse(userJson) : null;
+    return firebaseAuth.getCurrentUser();
   }
 
-  setUser(user) {
-    localStorage.setItem(this.currentUserKey, JSON.stringify(user));
+  async login(email, password) {
+    return await firebaseAuth.login(email, password);
   }
 
-  async login(email, password = "", role = "admin") {
-    if (DATABASE_MODE === "firebase") {
-      return await firebaseAuth.login(email, password);
-    }
-    const users = db.getCollection('users');
-    let user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-
-    if (!user) {
-      // Create user session dynamically if email provided
-      user = {
-        uid: 'usr_' + Date.now(),
-        name: email.split('@')[0].toUpperCase(),
-        email: email,
-        role: role,
-        department: role === 'admin' ? 'Administration' : 'Pharmacy'
-      };
-    }
-    this.setUser(user);
-    return user;
-  }
-
-  switchRole(targetRole) {
-    const users = db.getCollection('users');
-    let user = users.find(u => u.role === targetRole);
-
-    if (!user) {
-      user = {
-        uid: 'usr_switch_' + targetRole,
-        name: `Demo ${targetRole.toUpperCase()}`,
-        email: `${targetRole}@meditrack.com`,
-        role: targetRole,
-        department: targetRole === 'admin' ? 'Administration' : 'Pharmacy',
-        internId: targetRole === 'student' ? 'INT-101' : null
-      };
-    }
-
-    this.setUser(user);
-    console.log(`[MediTrack Auth] Switched active session role to: ${targetRole}`);
-    window.location.reload();
+  async register(email, password, name, role) {
+    return await firebaseAuth.registerUser(email, password, role, { name });
   }
 
   async logout() {
-
-    if (DATABASE_MODE === "firebase") {
-      return await firebaseAuth.logout();
-    }
-
-    localStorage.removeItem(this.currentUserKey);
-    window.location.href = 'login.html';
+    await firebaseAuth.logout();
   }
 
   isAdmin() {
@@ -90,14 +74,21 @@ class AuthService {
     return user && user.role === 'supervisor';
   }
 
+  /**
+   * Page-level route guard
+   * Usage: auth.checkAuth(['admin']) → sirf admin allow
+   */
   checkAuth(allowedRoles = []) {
     const user = this.getCurrentUser();
     if (!user) {
-      window.location.href = 'login.html';
+      window.location.replace('login.html');
       return false;
     }
     if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
-      console.warn(`[MediTrack Auth] User role ${user.role} restricted for this page.`);
+      console.warn(`[Auth] Access denied for role: ${user.role}`);
+      alert("Access Denied: You don't have permission to view this page.");
+      window.location.replace('dashboard.html');
+      return false;
     }
     return true;
   }

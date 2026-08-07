@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- 🔥 THEME FOUC FIX -->
+    <script>
+        (function () {
+            const savedTheme = localStorage.getItem('meditrack_theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
+
+    <title>Sign Up - MediTrack Hospital Management</title>
+
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/theme.css">
+    <link rel="stylesheet" href="assets/css/components.css">
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+
+    <style>
+        body.signup-body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0f172a, #1e293b, #0ea5e9);
+            background-size: 400% 400%;
+            animation: shimmer 15s ease infinite;
+            padding: 20px;
+        }
+
+        .signup-container {
+            width: 100%;
+            max-width: 480px;
+            padding: 40px;
+        }
+
+        .signup-header {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        .signup-logo {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 16px;
+            background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 32px;
+            box-shadow: 0 8px 24px rgba(14, 165, 233, 0.4);
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+    </style>
+</head>
+
+<body class="signup-body">
+
+    <div class="glass-card signup-container animate-fade-in">
+        <div class="signup-header">
+            <div class="signup-logo">
+                <i class="bx bx-plus-medical"></i>
+            </div>
+            <h2 style="font-size: 24px; font-weight: 800; color: var(--text-main);">Create Account</h2>
+            <p style="font-size: 14px; color: var(--text-muted); margin-top: 4px;">Join MediTrack Hospital System</p>
+        </div>
+
+        <form id="signup-form">
+            <div class="form-group">
+                <label class="form-label" for="signup-name">Full Name</label>
+                <div class="search-box">
+                    <i class="bx bx-user search-icon"></i>
+                    <input type="text" id="signup-name" class="form-control" placeholder="Dr. A. K. Sharma" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="signup-email">Email Address</label>
+                <div class="search-box">
+                    <i class="bx bx-envelope search-icon"></i>
+                    <input type="email" id="signup-email" class="form-control" placeholder="name@hospital.com" required>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="form-group">
+                    <label class="form-label" for="signup-password">Password</label>
+                    <div class="search-box">
+                        <i class="bx bx-lock-alt search-icon"></i>
+                        <input type="password" id="signup-password" class="form-control" placeholder="Min 6 characters"
+                            minlength="6" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="signup-confirm">Confirm Password</label>
+                    <div class="search-box">
+                        <i class="bx bx-lock search-icon"></i>
+                        <input type="password" id="signup-confirm" class="form-control" placeholder="Repeat password"
+                            required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="signup-role">Select Role</label>
+                <select id="signup-role" class="form-control" required>
+                    <option value="" disabled selected>Choose your role...</option>
+                    <option value="admin">Admin (Hospital Administration)</option>
+                    <option value="student">Student / Intern</option>
+                    <option value="supervisor">Supervisor / Doctor</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 12px; padding: 12px;">
+                <i class="bx bx-user-plus"></i> Create Account
+            </button>
+        </form>
+
+        <!-- Sign In Link -->
+        <div
+            style="text-align: center; margin-top: 24px; padding-top: 20px; border-top: 1px dashed var(--border-color);">
+            <p style="font-size: 14px; color: var(--text-muted);">
+                Already have an account?
+                <a href="login.html" style="color: var(--primary-500); font-weight: 700; text-decoration: none;">Sign
+                    In</a>
+            </p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { auth } from "./assets/js/auth.js";
+
+        document.getElementById("signup-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const name = document.getElementById("signup-name").value.trim();
+            const email = document.getElementById("signup-email").value.trim();
+            const password = document.getElementById("signup-password").value;
+            const confirm = document.getElementById("signup-confirm").value;
+            const role = document.getElementById("signup-role").value;
+
+            // Validation
+            if (password !== confirm) {
+                alert("Passwords do not match!");
+                return;
+            }
+            if (password.length < 6) {
+                alert("Password must be at least 6 characters.");
+                return;
+            }
+            if (!role) {
+                alert("Please select a role.");
+                return;
+            }
+
+            const btn = e.target.querySelector('button[type="submit"]');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="bx bx-loader bx-spin"></i> Creating Account...';
+
+            try {
+                await auth.register(email, password, name, role);
+                alert("Account created successfully! Please sign in.");
+                window.location.href = "login.html";
+            } catch (error) {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+
+                let msg = "Sign Up Failed";
+                if (error.code === "auth/email-already-in-use") msg = "This email is already registered.";
+                else if (error.code === "auth/invalid-email") msg = "Invalid email address.";
+                else if (error.code === "auth/weak-password") msg = "Password is too weak (min 6 characters).";
+                else msg = error.message;
+
+                alert(msg);
+            }
+        });
+    </script>
+
+</body>
+
+</html>

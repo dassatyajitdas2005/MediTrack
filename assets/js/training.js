@@ -1,103 +1,94 @@
-/* MediTrack - Training Progress Controller */
+/* MediTrack - Training Progress View (Firebase Only) */
 
-import { db, DATABASE_MODE } from './db.js';
 import * as fbDb from './firebase-db.js';
-
 import { auth } from './auth.js';
 import { renderLayout } from './app.js';
 
-document.addEventListener('DOMContentLoaded', () => {
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await auth.init(); // 🔥 Login check
   renderLayout('training');
-  initTrainingModule();
+  loadTrainingData();
 });
 
-function initTrainingModule() {
-  loadTrainingProgress();
 
-  document.getElementById('training-search')?.addEventListener('input', loadTrainingProgress);
-  document.getElementById('training-course-filter')?.addEventListener('change', loadTrainingProgress);
-}
-
-async function loadTrainingProgress() {
-  const interns =
-    DATABASE_MODE === "firebase"
-      ? await fbDb.getInterns()
-      : db.getInterns();
-  const isStudent = auth.isStudent();
+async function loadTrainingData() {
   const user = auth.getCurrentUser();
+  const interns = await fbDb.getInterns();
+  const schedules = await fbDb.getTraining();
 
-  const searchVal = document.getElementById('training-search')?.value.toLowerCase() || '';
-  const courseFilter = document.getElementById('training-course-filter')?.value || '';
-
-  let filtered = interns.filter(i => {
-    const matchSearch = i.name.toLowerCase().includes(searchVal) || i.internId.toLowerCase().includes(searchVal);
-    const matchCourse = !courseFilter || i.course.includes(courseFilter);
-    return matchSearch && matchCourse;
-  });
-
-  if (isStudent && user) {
-    filtered = filtered.filter(i => i.email === user.email);
-    if (filtered.length === 0) filtered = [interns[0]];
-  }
-
-  const container = document.getElementById('training-grid-container');
+  const container = document.getElementById('training-progress-container');
   if (!container) return;
 
-  if (filtered.length === 0) {
-    container.innerHTML = `
-      <div style="grid-column: 1 / -1; text-align: center; padding: 40px;" class="glass-card">
-        <i class="bx bx-run" style="font-size: 48px; color: var(--text-muted);"></i>
-        <h4 style="margin-top: 10px; color: var(--text-muted);">No training progress records found.</h4>
-      </div>
-    `;
+  let displayInterns = interns;
+  if (user && user.role === 'student') {
+    displayInterns = interns.filter(i => i.email === user.email);
+  }
+
+  if (displayInterns.length === 0) {
+    container.innerHTML = `<div class="glass-card" style="text-align:center;padding:40px;"><i class="bx bx-book-open" style="font-size:48px;color:var(--text-muted);"></i><h4 style="margin-top:10px;color:var(--text-muted);">No training records found.</h4></div>`;
     return;
   }
 
-  container.innerHTML = filtered.map(intern => {
-    const totalDays = intern.totalTrainingDays || 30;
-    const completed = Math.min(intern.completedDays || 0, totalDays);
-    const remaining = Math.max(0, totalDays - completed);
-    const percent = Math.round((completed / totalDays) * 100);
-
-    const isComplete = percent >= 100;
-    const barClass = isComplete ? 'emerald' : '';
+  container.innerHTML = displayInterns.map(intern => {
+    const progress = getInternProgress(intern);
+    const deptSchedule = schedules.find(s => s.department === intern.department) || { rotationName: 'General Training', duration: '30 days' };
 
     return `
-      <div class="glass-card animate-fade-in" style="padding: 24px;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+      <div class="glass-card" style="padding:24px; margin-bottom:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
           <div>
-            <h3 style="font-size: 18px; font-weight: 800; color: var(--text-main);">${intern.name}</h3>
-            <p style="font-size: 13px; color: var(--primary-500); font-weight: 700;">${intern.course}</p>
-            <p style="font-size: 12px; color: var(--text-muted);">${intern.college}</p>
+            <h3 style="font-size:18px; font-weight:800;">${escapeHtml(intern.name)}</h3>
+            <p style="font-size:13px; color:var(--text-muted);">${escapeHtml(intern.internId)} | ${escapeHtml(intern.department)}</p>
           </div>
-          <span class="status-pill ${isComplete ? 'issued' : 'active'}">${isComplete ? 'Completed' : 'In Progress'}</span>
+          <span class="status-pill ${progress.status}">${progress.status === 'active' ? 'In Progress' : 'Completed'}</span>
         </div>
 
-        <div class="grid-3" style="margin-bottom: 20px; background: var(--bg-main); padding: 14px; border-radius: var(--radius-md); text-align: center;">
-          <div>
-            <div style="font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Completed</div>
-            <div style="font-size: 20px; font-weight: 800; color: var(--accent-emerald);">${completed} Days</div>
-          </div>
-          <div>
-            <div style="font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Remaining</div>
-            <div style="font-size: 20px; font-weight: 800; color: var(--accent-amber);">${remaining} Days</div>
-          </div>
-          <div>
-            <div style="font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Attendance</div>
-            <div style="font-size: 20px; font-weight: 800; color: var(--primary-500);">${intern.attendancePercentage}%</div>
-          </div>
-        </div>
-
-        <div class="progress-container">
+        <div class="progress-container" style="margin-bottom:16px;">
           <div class="progress-header">
-            <span>Overall Completion</span>
-            <span>${percent}%</span>
+            <span>Training Progress</span>
+            <span>${progress.progressPercent}%</span>
           </div>
-          <div class="progress-bar-bg" style="height: 12px;">
-            <div class="progress-bar-fill ${barClass}" style="width: ${percent}%;"></div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" style="width:${progress.progressPercent}%;"></div>
           </div>
+          <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-muted); margin-top:4px;">
+            <span>${progress.completedDays} days completed</span>
+            <span>${intern.totalTrainingDays} days total</span>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; font-size:13px;">
+          <div><strong>Current Rotation:</strong> ${escapeHtml(deptSchedule.rotationName)}</div>
+          <div><strong>Duration:</strong> ${escapeHtml(deptSchedule.duration)}</div>
+          <div><strong>Attendance:</strong> ${intern.attendancePercentage || 0}%</div>
+          <div><strong>Certificate:</strong> ${intern.certificateIssued ? 'Issued' : 'Pending'}</div>
         </div>
       </div>
     `;
   }).join('');
+}
+
+function getInternProgress(intern) {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const joining = new Date(intern.joiningDate); joining.setHours(0, 0, 0, 0);
+  const ending = new Date(intern.endingDate); ending.setHours(0, 0, 0, 0);
+  let completedDays = 0;
+  if (today >= joining) {
+    completedDays = Math.ceil(Math.min(today - joining, ending - joining) / (1000 * 60 * 60 * 24));
+  }
+  completedDays = Math.max(0, Math.min(completedDays, intern.totalTrainingDays || 30));
+  const totalDays = intern.totalTrainingDays || 30;
+  const percent = totalDays > 0 ? Math.round((completedDays / totalDays) * 100) : 0;
+  let status = intern.status;
+  if (percent >= 100 || today > ending) status = 'completed';
+  else status = 'active';
+  return { completedDays, progressPercent: percent, status };
+}
+
+function escapeHtml(text) {
+  if (!text) return "";
+  const div = document.createElement("div");
+  div.textContent = text;
+  return div.innerHTML;
 }

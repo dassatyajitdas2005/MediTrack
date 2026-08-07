@@ -1,99 +1,111 @@
-/* MediTrack - Reports & Analytics Aggregator Controller */
-import { db, DATABASE_MODE } from './db.js';
+/* MediTrack - Reports & Export (Firebase Only) */
+
 import * as fbDb from './firebase-db.js';
+import { auth } from './auth.js';
 import { renderLayout } from './app.js';
 
-document.addEventListener('DOMContentLoaded', () => {
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await auth.init();
+  auth.checkAuth(['admin', 'supervisor']);
   renderLayout('report');
-  initReports();
+  // ... baaki same
 });
 
-function initReports() {
-  renderAttendanceSummary();
-  renderDoctorReport();
-  renderInternReport();
 
-  document.getElementById('export-csv-btn')?.addEventListener('click', exportReportsCSV);
-  document.getElementById('print-report-btn')?.addEventListener('click', () => window.print());
-}
-async function renderAttendanceSummary() {
-  const interns = DATABASE_MODE === "firebase"
-    ? await fbDb.getInterns()
-    : db.getInterns();
-
-  const attendance = DATABASE_MODE === "firebase"
-    ? await fbDb.getAttendance()
-    : db.getAttendance();
-
-  const totalLogs = attendance.length;
-  const presentCount = attendance.filter(a => a.status === 'Present').length;
-  const absentCount = attendance.filter(a => a.status === 'Absent').length;
-  const avgAttendance = interns.length > 0 ? Math.round(interns.reduce((acc, i) => acc + (i.attendancePercentage || 0), 0) / interns.length) : 0;
-
-  document.getElementById('rpt-total-logs').innerText = totalLogs;
-  document.getElementById('rpt-present-count').innerText = presentCount;
-  document.getElementById('rpt-absent-count').innerText = absentCount;
-  document.getElementById('rpt-avg-attendance').innerText = `${avgAttendance}%`;
+async function initReports() {
+  document.getElementById('generate-report-btn')?.addEventListener('click', generateReport);
+  document.getElementById('export-csv-btn')?.addEventListener('click', exportToCSV);
+  document.getElementById('export-pdf-btn')?.addEventListener('click', () => alert('PDF export: Use browser print (Ctrl+P)'));
 }
 
-async function renderDoctorReport() {
-  const doctors = DATABASE_MODE === "firebase"
-    ? await fbDb.getDoctors()
-    : db.getDoctors();
-  const tbody = document.getElementById('rpt-doctors-tbody');
-  if (!tbody) return;
+async function generateReport() {
+  const reportType = document.getElementById('report-type')?.value || 'all';
+  const fromDate = document.getElementById('report-from')?.value;
+  const toDate = document.getElementById('report-to')?.value;
 
-  tbody.innerHTML = doctors.map(doc => `
-    <tr>
-      <td><strong>${doc.doctorId}</strong></td>
-      <td>${doc.name}</td>
-      <td>${doc.department}</td>
-      <td>${doc.room}</td>
-      <td>${doc.availableDays.join(', ')}</td>
-      <td>${doc.opdTiming}</td>
-    </tr>
-  `).join('');
+  const interns = await fbDb.getInterns();
+  const doctors = await fbDb.getDoctors();
+  const attendance = await fbDb.getAttendance();
+
+  let filteredAttendance = attendance;
+  if (fromDate) filteredAttendance = filteredAttendance.filter(a => a.date >= fromDate);
+  if (toDate) filteredAttendance = filteredAttendance.filter(a => a.date <= toDate);
+
+  const container = document.getElementById('report-output');
+  if (!container) return;
+
+  let html = `<div class="glass-card" style="padding:24px;">`;
+
+  if (reportType === 'all' || reportType === 'intern') {
+    html += `<h3 style="margin-bottom:16px;"><i class="bx bx-user"></i> Intern Summary</h3>`;
+    html += `<table class="data-table" style="margin-bottom:24px;"><thead><tr><th>ID</th><th>Name</th><th>Dept</th><th>Progress</th><th>Attendance</th><th>Status</th></tr></thead><tbody>`;
+    html += interns.map(i => {
+      const progress = getInternProgress(i);
+      return `<tr><td>${escapeHtml(i.internId)}</td><td>${escapeHtml(i.name)}</td><td>${escapeHtml(i.department)}</td><td>${progress.progressPercent}%</td><td>${i.attendancePercentage || 0}%</td><td>${progress.status}</td></tr>`;
+    }).join('');
+    html += `</tbody></table>`;
+  }
+
+  if (reportType === 'all' || reportType === 'attendance') {
+    html += `<h3 style="margin-bottom:16px;"><i class="bx bx-calendar-check"></i> Attendance Records (${filteredAttendance.length})</h3>`;
+    html += `<table class="data-table" style="margin-bottom:24px;"><thead><tr><th>Date</th><th>Intern ID</th><th>Status</th><th>Remarks</th></tr></thead><tbody>`;
+    html += filteredAttendance.map(a => `<tr><td>${escapeHtml(a.date)}</td><td>${escapeHtml(a.internId)}</td><td><span class="status-pill ${a.status.toLowerCase()}">${a.status}</span></td><td>${escapeHtml(a.remarks) || '-'}</td></tr>`).join('');
+    html += `</tbody></table>`;
+  }
+
+  if (reportType === 'all' || reportType === 'doctor') {
+    html += `<h3 style="margin-bottom:16px;"><i class="bx bx-plus-medical"></i> Doctor List (${doctors.length})</h3>`;
+    html += `<table class="data-table"><thead><tr><th>Name</th><th>Department</th><th>Specialization</th><th>Room</th></tr></thead><tbody>`;
+    html += doctors.map(d => `<tr><td>${escapeHtml(d.name)}</td><td>${escapeHtml(d.department)}</td><td>${escapeHtml(d.specialization)}</td><td>${escapeHtml(d.room)}</td></tr>`).join('');
+    html += `</tbody></table>`;
+  }
+
+  html += `</div>`;
+  container.innerHTML = html;
 }
 
-async function renderInternReport() {
-  const interns = DATABASE_MODE === "firebase"
-    ? await fbDb.getInterns()
-    : db.getInterns();
-  const tbody = document.getElementById('rpt-interns-tbody');
-  if (!tbody) return;
+function exportToCSV() {
+  const reportType = document.getElementById('report-type')?.value || 'all';
+  // Simple CSV export of visible table
+  const table = document.querySelector('#report-output table');
+  if (!table) { alert('Generate report first!'); return; }
 
-  tbody.innerHTML = interns.map(intern => `
-    <tr>
-      <td><strong>${intern.internId}</strong></td>
-      <td>${intern.name}</td>
-      <td>${intern.course}</td>
-      <td>${intern.department}</td>
-      <td>${intern.completedDays} / ${intern.totalTrainingDays} Days</td>
-      <td><strong>${intern.attendancePercentage}%</strong></td>
-      <td>
-        <span class="status-pill ${intern.certificateIssued ? 'issued' : 'pending'}">
-          ${intern.certificateIssued ? 'Issued' : 'Pending'}
-        </span>
-      </td>
-    </tr>
-  `).join('');
-}
-
-async function exportReportsCSV() {
-  const interns = DATABASE_MODE === "firebase"
-    ? await fbDb.getInterns()
-    : db.getInterns();
-  let csvContent = "data:text/csv;charset=utf-8,Intern ID,Name,Course,Department,College,Completed Days,Total Days,Attendance %,Certificate Status\n";
-
-  interns.forEach(i => {
-    csvContent += `${i.internId},"${i.name}","${i.course}","${i.department}","${i.college}",${i.completedDays},${i.totalTrainingDays},${i.attendancePercentage}%,${i.certificateIssued ? 'Issued' : 'Pending'}\n`;
+  let csv = [];
+  table.querySelectorAll('tr').forEach(row => {
+    const cols = Array.from(row.querySelectorAll('td, th')).map(cell => `"${cell.innerText.replace(/"/g, '""')}"`);
+    csv.push(cols.join(','));
   });
 
-  const encodedUri = encodeURI(csvContent);
-  const link = document.createElement("a");
-  link.setAttribute("href", encodedUri);
-  link.setAttribute("download", `MediTrack_Intern_Report_${new Date().toISOString().split('T')[0]}.csv`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  const blob = new Blob([csv.join('\n')], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `meditrack_report_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function getInternProgress(intern) {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const joining = new Date(intern.joiningDate); joining.setHours(0, 0, 0, 0);
+  const ending = new Date(intern.endingDate); ending.setHours(0, 0, 0, 0);
+  let completedDays = 0;
+  if (today >= joining) {
+    completedDays = Math.ceil(Math.min(today - joining, ending - joining) / (1000 * 60 * 60 * 24));
+  }
+  completedDays = Math.max(0, Math.min(completedDays, intern.totalTrainingDays || 30));
+  const totalDays = intern.totalTrainingDays || 30;
+  const percent = totalDays > 0 ? Math.round((completedDays / totalDays) * 100) : 0;
+  let status = intern.status;
+  if (percent >= 100 || today > ending) status = 'completed';
+  else status = 'active';
+  return { completedDays, progressPercent: percent, status };
+}
+
+function escapeHtml(text) {
+  if (!text) return "";
+  const div = document.createElement("div");
+  div.textContent = text;
+  return div.innerHTML;
 }

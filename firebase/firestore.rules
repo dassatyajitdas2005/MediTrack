@@ -1,29 +1,8 @@
-
-    match /attendance/{attendanceId} {
-      allow read: if request.auth != null;
-      allow create, update: if isAdmin() || isSupervisor();
-      allow delete: if isAdmin();
-    }
-
-    // Training schedule
-    match /training_schedule/{courseId} {
-      allow read: if request.auth != null;
-      allow write: if isAdmin();
-    }
-
-    // Certificates collection
-    match /certificates/{certId} {
-      allow read: if request.auth != null;
-      // CRITICAL SECURITY RULE: Only Admin can issue certificates
-      allow create, update, delete: if isAdmin();
-    }
-  }
-}
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Helper function to check role
+    // Helper functions
     function getUserRole() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
     }
@@ -59,3 +38,22 @@ service cloud.firestore {
     }
 
     // Attendance records
+    match /attendance/{attendanceId} {
+      allow read: if request.auth != null;
+      allow create, update: if isAdmin() || isSupervisor();
+      allow delete: if isAdmin();
+    }
+
+    // Training schedule  ← FIXED: 'training' (firebase-db.js ke hisaab se)
+    match /training/{courseId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    // Certificates collection
+    match /certificates/{certId} {
+      allow read: if request.auth != null;
+      allow create, update, delete: if isAdmin();
+    }
+  }
+}

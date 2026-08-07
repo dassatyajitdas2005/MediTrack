@@ -1,4 +1,4 @@
-/* MediTrack - Firebase Authentication Module */
+/* MediTrack - Firebase Authentication Module (Production) */
 
 import { auth, db } from "./firebase-config.js";
 import {
@@ -16,7 +16,7 @@ import {
 const CURRENT_USER_KEY = "meditrack_firebase_user";
 
 /**
- * Register a new user in Firebase Auth and Firestore users collection
+ * Register new user → Firebase Auth + Firestore profile
  */
 export async function registerUser(email, password, role = "student", extraData = {}) {
   try {
@@ -29,133 +29,100 @@ export async function registerUser(email, password, role = "student", extraData 
       role: role,
       name: extraData.name || email.split("@")[0].toUpperCase(),
       department: extraData.department || (role === "admin" ? "Administration" : "Pharmacy"),
+      status: "Active",
       createdAt: new Date().toISOString(),
       ...extraData
     };
 
-    // Store user metadata profile in Firestore
     await setDoc(doc(db, "users", user.uid), userData);
     localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(userData));
 
     return userData;
   } catch (error) {
-    console.error("[FirebaseAuth] Registration Error:", error);
+    console.error("[FirebaseAuth] Registration Error:", error.code, error.message);
     throw error;
   }
 }
 
 /**
- * Main Firebase Login Function
+ * Login → Firebase Auth verify → Firestore se profile fetch
+ * Role client se nahi aata, Firestore se aata hai (Security)
  */
-export async function login(email, password, role = "student") {
-
-  console.log("======== LOGIN ========");
-  console.log("Project:", auth.app.options.projectId);
-  console.log("Email:", email);
-  console.log("Password:", password);
-
+export async function login(email, password) {
   try {
-
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
 
-    // Fetch user profile from Firestore 'users' collection
     const userDocRef = doc(db, "users", user.uid);
     const userDoc = await getDoc(userDocRef);
 
     let userData;
-
     if (userDoc.exists()) {
-
       userData = userDoc.data();
-
     } else {
-
-      // Fallback profile if record not yet created in Firestore
+      // Agar Firestore doc missing hai (rare case)
       userData = {
         uid: user.uid,
         email: user.email,
-        role: role,
-        name: email.split("@")[0].toUpperCase(),
-        department: role === "admin" ? "Administration" : "Pharmacy"
+        role: "student",
+        name: user.email.split("@")[0].toUpperCase(),
+        department: "Pharmacy",
+        status: "Active",
+        createdAt: new Date().toISOString()
       };
-
       await setDoc(userDocRef, userData);
-
     }
 
     localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(userData));
-
     return userData;
 
   } catch (error) {
-
-    console.log("Error Code:", error.code);
-    console.log("Error Message:", error.message);
-    console.log(error);
-
+    console.error("[FirebaseAuth] Login Error:", error.code, error.message);
     throw error;
-
   }
-
 }
 
 /**
- * Dedicated Admin Login helper
- */
-export async function adminLogin(email, password) {
-  return await login(email, password, "admin");
-}
-
-/**
- * Dedicated Student Login helper
- */
-export async function studentLogin(email, password) {
-  return await login(email, password, "student");
-}
-
-/**
- * Dedicated Supervisor Login helper
- */
-export async function supervisorLogin(email, password) {
-  return await login(email, password, "supervisor");
-}
-
-/**
- * Logout user from Firebase & clear local session cache
+ * Logout → Firebase se + local cache clear
  */
 export async function logout() {
   try {
     await signOut(auth);
-    localStorage.removeItem(CURRENT_USER_KEY);
-    window.location.href = "login.html";
   } catch (error) {
     console.error("[FirebaseAuth] Logout Error:", error);
+  } finally {
     localStorage.removeItem(CURRENT_USER_KEY);
     window.location.href = "login.html";
   }
 }
 
 /**
- * Get cached/active authenticated user profile
+ * Sync access ke liye cached user
  */
 export function getCurrentUser() {
   const cachedUser = localStorage.getItem(CURRENT_USER_KEY);
   if (cachedUser) {
-    return JSON.parse(cachedUser);
+    try {
+      return JSON.parse(cachedUser);
+    } catch (e) {
+      return null;
+    }
   }
-  return auth.currentUser ? { uid: auth.currentUser.uid, email: auth.currentUser.email } : null;
+  return null;
 }
 
 /**
- * Check and listen to Firebase auth session state changes
+ * Background verification — har page load pe Firebase se confirm karta hai
  */
 export function checkSession(callback) {
   onAuthStateChanged(auth, async (user) => {
     if (user) {
       const userDocRef = doc(db, "users", user.uid);
       const userDoc = await getDoc(userDocRef);
-      const userData = userDoc.exists() ? userDoc.data() : { uid: user.uid, email: user.email };
+      const userData = userDoc.exists()
+        ? userDoc.data()
+        : { uid: user.uid, email: user.email, role: "student", name: "User" };
+
       localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(userData));
       if (callback) callback(userData);
     } else {

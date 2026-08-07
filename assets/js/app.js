@@ -34,17 +34,12 @@ export function renderLayout(activePage = 'dashboard') {
             <span class="icon"><i class="bx bx-group"></i></span>
             <span>Intern Management</span>
           </a>
-
-
           <a href="user.html" class="nav-item ${activePage === 'user' ? 'active' : ''}">
             <span class="icon">
                 <i class="bx bx-user-circle"></i>
             </span>
             <span>User Management</span>
           </a>
-
-
-
           <a href="doctor.html" class="nav-item ${activePage === 'doctor' ? 'active' : ''}">
             <span class="icon"><i class="bx bx-user-voice"></i></span>
             <span>Doctor OPD Schedule</span>
@@ -124,7 +119,7 @@ export function renderLayout(activePage = 'dashboard') {
 
         <div class="top-navbar-right">
           <!-- Role Switcher Quick Pill -->
-          <div class="role-switcher-pill" title="Quick Role Switcher for Testing">
+          <div class="role-switcher-pill" id="dev-role-switcher" title="Quick Role Switcher for Testing">
             <button class="role-switcher-btn ${role === 'admin' ? 'active' : ''}" data-role="admin">Admin</button>
             <button class="role-switcher-btn ${role === 'student' ? 'active' : ''}" data-role="student">Student</button>
             <button class="role-switcher-btn ${role === 'supervisor' ? 'active' : ''}" data-role="supervisor">Supervisor</button>
@@ -142,6 +137,13 @@ export function renderLayout(activePage = 'dashboard') {
   // Bind Event Handlers
   bindEvents();
   theme.updateToggleIcon();
+
+  // Day 7 Fix: Role switcher sirf localhost pe dikhe
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const roleSwitcher = document.getElementById('dev-role-switcher');
+  if (roleSwitcher && !isLocalhost) {
+    roleSwitcher.style.display = 'none';
+  }
 }
 
 function bindEvents() {

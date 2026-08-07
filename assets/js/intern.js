@@ -1,35 +1,30 @@
-/* MediTrack - Intern Management Controller */
+/* MediTrack - Intern Management Controller (Firebase Only) */
 
-import { db, DATABASE_MODE } from './db.js';
 import * as fbDb from './firebase-db.js';
 import { auth } from './auth.js';
 import { renderLayout } from './app.js';
 
 let currentInterns = [];
+let editingFirestoreId = null;
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  await auth.init();
+  auth.checkAuth(['admin', 'supervisor']);
   renderLayout('intern');
-  initInternModule();
+  // ... baaki same
 });
 
 function initInternModule() {
-  const user = auth.getCurrentUser();
   const isAdmin = auth.isAdmin();
-
-  // Hide Add Intern Button for non-admins
   const addBtn = document.getElementById('add-intern-btn');
-  if (addBtn && !isAdmin) {
-    addBtn.style.display = 'none';
-  }
+  if (addBtn && !isAdmin) addBtn.style.display = 'none';
 
   loadInterns();
 
-  // Search & Filter Listeners
   document.getElementById('intern-search-input')?.addEventListener('input', filterInterns);
   document.getElementById('intern-dept-filter')?.addEventListener('change', filterInterns);
   document.getElementById('intern-course-filter')?.addEventListener('change', filterInterns);
 
-  // Form Submit Handler
   document.getElementById('intern-form')?.addEventListener('submit', handleInternFormSubmit);
   document.getElementById('add-intern-btn')?.addEventListener('click', () => openInternModal());
   document.getElementById('close-intern-modal')?.addEventListener('click', closeInternModal);
@@ -37,92 +32,87 @@ function initInternModule() {
 }
 
 async function loadInterns() {
-  if (DATABASE_MODE === 'firebase') {
-    const fsInterns = await fbDb.getInterns();
-    currentInterns = fsInterns.length > 0 ? fsInterns : db.getInterns();
-  } else {
-    currentInterns = db.getInterns();
-  }
+  currentInterns = await fbDb.getInterns();
   renderInternTable(currentInterns);
+}
+
+function getInternProgress(intern) {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const joining = new Date(intern.joiningDate); joining.setHours(0, 0, 0, 0);
+  const ending = new Date(intern.endingDate); ending.setHours(0, 0, 0, 0);
+  let completedDays = 0;
+  if (today >= joining) {
+    completedDays = Math.ceil(Math.min(today - joining, ending - joining) / (1000 * 60 * 60 * 24));
+  }
+  completedDays = Math.max(0, Math.min(completedDays, intern.totalTrainingDays || 30));
+  const totalDays = intern.totalTrainingDays || 30;
+  const percent = totalDays > 0 ? Math.round((completedDays / totalDays) * 100) : 0;
+  let status = intern.status;
+  if (percent >= 100 || today > ending) status = 'completed';
+  else status = 'active';
+  return { completedDays, progressPercent: percent, status };
 }
 
 function renderInternTable(interns) {
   const tbody = document.getElementById('intern-tbody');
   const isAdmin = auth.isAdmin();
-
   if (!tbody) return;
 
   if (interns.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding: 30px; color: var(--text-muted);">No intern records found.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:var(--text-muted);">No intern records found.</td></tr>`;
     return;
   }
 
   tbody.innerHTML = interns.map(intern => {
-    const certBadge = intern.certificateIssued 
-      ? `<span class="status-pill issued"><i class="bx bx-check-circle"></i> Issued</span>` 
+    const progress = getInternProgress(intern);
+    const certBadge = intern.certificateIssued
+      ? `<span class="status-pill issued"><i class="bx bx-check-circle"></i> Issued</span>`
       : `<span class="status-pill pending"><i class="bx bx-time"></i> Pending</span>`;
-    
-    const statusPill = intern.status === 'active' 
-      ? `<span class="status-pill active">Active</span>` 
+    const statusPill = progress.status === 'active'
+      ? `<span class="status-pill active">Active</span>`
       : `<span class="status-pill warning">Completed</span>`;
 
     return `
       <tr>
-        <td><strong>${intern.internId}</strong></td>
+        <td><strong>${escapeHtml(intern.internId)}</strong></td>
         <td>
-          <div style="font-weight: 700;">${intern.name}</div>
-          <div style="font-size: 12px; color: var(--text-muted);">${intern.college}</div>
+          <div style="font-weight:700;">${escapeHtml(intern.name)}</div>
+          <div style="font-size:12px; color:var(--text-muted);">${escapeHtml(intern.college)}</div>
         </td>
-        <td>${intern.course}</td>
-        <td>${intern.department}</td>
-        <td>${intern.joiningDate} to ${intern.endingDate}</td>
+        <td>${escapeHtml(intern.course)}</td>
+        <td>${escapeHtml(intern.department)}</td>
+        <td>${escapeHtml(intern.joiningDate)} to ${escapeHtml(intern.endingDate)}</td>
         <td>
-          <div class="progress-container" style="width: 120px;">
-            <div class="progress-header">
-              <span>${intern.completedDays}/${intern.totalTrainingDays}d</span>
-              <span>${Math.round((intern.completedDays/intern.totalTrainingDays)*100)}%</span>
-            </div>
-            <div class="progress-bar-bg">
-              <div class="progress-bar-fill" style="width: ${Math.round((intern.completedDays/intern.totalTrainingDays)*100)}%;"></div>
-            </div>
+          <div class="progress-container" style="width:120px;">
+            <div class="progress-header"><span>${progress.completedDays}/${intern.totalTrainingDays}d</span><span>${progress.progressPercent}%</span></div>
+            <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${progress.progressPercent}%;"></div></div>
           </div>
         </td>
-        <td><strong>${intern.attendancePercentage}%</strong></td>
+        <td><strong>${intern.attendancePercentage || 0}%</strong></td>
         <td>${certBadge}</td>
         <td>
-          <div style="display: flex; gap: 6px;">
+          <div style="display:flex; gap:6px;">
             ${isAdmin ? `
-              <button class="btn btn-secondary btn-sm edit-intern-btn" data-id="${intern.internId}" title="Edit"><i class="bx bx-edit"></i></button>
-              <button class="btn btn-danger btn-sm delete-intern-btn" data-id="${intern.internId}" title="Delete"><i class="bx bx-trash"></i></button>
-            ` : `
-              <button class="btn btn-secondary btn-sm view-intern-btn" data-id="${intern.internId}" title="View Details"><i class="bx bx-show"></i></button>
-            `}
+              <button class="btn btn-secondary btn-sm edit-intern-btn" data-id="${escapeHtml(intern.internId)}"><i class="bx bx-edit"></i></button>
+              <button class="btn btn-danger btn-sm delete-intern-btn" data-id="${escapeHtml(intern.internId)}"><i class="bx bx-trash"></i></button>
+            ` : `<button class="btn btn-secondary btn-sm" disabled><i class="bx bx-show"></i></button>`}
           </div>
         </td>
       </tr>
     `;
   }).join('');
 
-  // Bind Actions
   if (isAdmin) {
     document.querySelectorAll('.edit-intern-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const id = e.currentTarget.getAttribute('data-id');
-        openInternModal(id);
-      });
+      btn.addEventListener('click', (e) => openInternModal(e.currentTarget.getAttribute('data-id')));
     });
-
     document.querySelectorAll('.delete-intern-btn').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         const id = e.currentTarget.getAttribute('data-id');
-        if (confirm(`Are you sure you want to delete intern ${id}?`)) {
-          if (DATABASE_MODE === 'firebase') {
-            await fbDb.deleteIntern(id);
-          } else {
-            db.deleteIntern(id);
-          }
-          await loadInterns();
-        }
+        if (!confirm(`Delete intern ${id}?`)) return;
+        const intern = currentInterns.find(i => i.internId === id);
+        await fbDb.deleteIntern(intern?.id || id);
+        await loadInterns();
       });
     });
   }
@@ -135,24 +125,21 @@ function filterInterns() {
 
   const filtered = currentInterns.filter(i => {
     const matchesSearch = i.name.toLowerCase().includes(query) || i.internId.toLowerCase().includes(query) || i.college.toLowerCase().includes(query);
-    const matchesDept = !deptFilter || i.department === deptFilter;
-    const matchesCourse = !courseFilter || i.course.includes(courseFilter);
-    return matchesSearch && matchesDept && matchesCourse;
+    return matchesSearch && (!deptFilter || i.department === deptFilter) && (!courseFilter || i.course.includes(courseFilter));
   });
-
   renderInternTable(filtered);
 }
 
 function openInternModal(internId = null) {
   const modal = document.getElementById('intern-modal');
   const modalTitle = document.getElementById('intern-modal-title');
-  const form = document.getElementById('intern-form');
-
-  form.reset();
+  document.getElementById('intern-form').reset();
+  editingFirestoreId = null;
 
   if (internId) {
-    const intern = db.getInternById(internId);
+    const intern = currentInterns.find(i => i.internId === internId || i.id === internId);
     if (intern) {
+      editingFirestoreId = intern.id || null;
       modalTitle.innerText = `Edit Intern (${internId})`;
       document.getElementById('intern-id-input').value = intern.internId;
       document.getElementById('intern-name').value = intern.name;
@@ -167,14 +154,14 @@ function openInternModal(internId = null) {
     }
   } else {
     modalTitle.innerText = "Add New Intern";
-    document.getElementById('intern-id-input').value = "INT-" + (100 + currentInterns.length + 1);
+    document.getElementById('intern-id-input').value = "INT-" + Date.now().toString().slice(-5);
   }
-
   modal.classList.add('active');
 }
 
 function closeInternModal() {
   document.getElementById('intern-modal').classList.remove('active');
+  editingFirestoreId = null;
 }
 
 async function handleInternFormSubmit(e) {
@@ -182,8 +169,8 @@ async function handleInternFormSubmit(e) {
   const internId = document.getElementById('intern-id-input').value;
   const isEditing = currentInterns.some(i => i.internId === internId || i.id === internId);
   const certIssued = document.getElementById('intern-cert-issued').checked;
-
   const existingIntern = currentInterns.find(i => i.internId === internId || i.id === internId);
+  const firestoreId = editingFirestoreId || existingIntern?.id || internId;
 
   const formData = {
     internId,
@@ -196,30 +183,21 @@ async function handleInternFormSubmit(e) {
     endingDate: document.getElementById('intern-ending').value,
     totalTrainingDays: parseInt(document.getElementById('intern-total-days').value) || 30,
     completedDays: isEditing ? (existingIntern?.completedDays || 0) : 0,
-    attendancePercentage: isEditing ? (existingIntern?.attendancePercentage || 100) : 100,
+    attendancePercentage: isEditing ? (existingIntern?.attendancePercentage || 0) : 0,
     certificateIssued: certIssued,
     status: certIssued ? 'completed' : 'active'
   };
 
-  if (DATABASE_MODE === 'firebase') {
-    if (isEditing) {
-      await fbDb.updateIntern(internId, formData);
-    } else {
-      await fbDb.addIntern(formData);
-    }
-  } else {
-    if (isEditing) {
-      db.updateIntern(internId, formData);
-    } else {
-      db.addIntern(formData);
-    }
-    if (certIssued) {
-      db.setCertificateIssued(internId, true);
-    } else {
-      db.setCertificateIssued(internId, false);
-    }
-  }
+  if (isEditing) await fbDb.updateIntern(firestoreId, formData);
+  else await fbDb.addIntern(formData);
 
   closeInternModal();
   await loadInterns();
+}
+
+function escapeHtml(text) {
+  if (!text) return "";
+  const div = document.createElement("div");
+  div.textContent = text;
+  return div.innerHTML;
 }
