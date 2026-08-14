@@ -1,35 +1,197 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="dark">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Intern Management - MediTrack</title>
 
+  <script>
+    (function () {
+      const savedTheme = localStorage.getItem('meditrack_theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    })();
+  </script>
+
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/css/theme.css">
   <link rel="stylesheet" href="assets/css/components.css">
   <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+
+  <style>
+    /* Toast - Top Right */
+    .toast {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      padding: 14px 20px;
+      border-radius: var(--radius-md);
+      color: white;
+      font-weight: 700;
+      z-index: 9999;
+      transform: translateY(-100px);
+      opacity: 0;
+      transition: all 0.4s ease;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .toast-success {
+      background: var(--accent-emerald);
+    }
+
+    .toast-error {
+      background: var(--accent-rose);
+    }
+
+    /* Table Actions */
+    .action-btns {
+      display: flex;
+      gap: 8px;
+    }
+
+    .action-btns button {
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-md);
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 16px;
+      transition: all 0.2s;
+    }
+
+    .btn-edit {
+      background: rgba(14, 165, 233, 0.12);
+      color: var(--primary-500);
+    }
+
+    .btn-edit:hover {
+      background: var(--primary-500);
+      color: white;
+    }
+
+    .btn-delete {
+      background: rgba(244, 63, 94, 0.12);
+      color: var(--accent-rose);
+    }
+
+    .btn-delete:hover {
+      background: var(--accent-rose);
+      color: white;
+    }
+
+    /* Badges */
+    .cert-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .cert-issued {
+      background: rgba(16, 185, 129, 0.15);
+      color: #059669;
+    }
+
+    .cert-pending {
+      background: rgba(245, 158, 11, 0.15);
+      color: #d97706;
+    }
+
+    /* Skeleton */
+    .skeleton {
+      background: linear-gradient(90deg, var(--bg-main) 25%, var(--bg-surface) 50%, var(--bg-main) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 6px;
+      height: 16px;
+    }
+
+    @keyframes shimmer {
+      0% {
+        background-position: -200% 0;
+      }
+
+      100% {
+        background-position: 200% 0;
+      }
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+
+    .empty-state i {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .form-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 640px) {
+      .form-grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .checkbox-card {
+      padding: 14px;
+      background: var(--bg-main);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+    }
+
+    .checkbox-card label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+  </style>
 </head>
 
 <body>
-  <div class="app-container">
-    <div id="sidebar-container"></div>
 
-    <div class="main-wrapper">
-      <div id="navbar-container"></div>
+  <!-- Navbar / Sidebar -->
+  <div id="sidebar-container"></div>
 
-      <main class="page-content animate-fade-in">
-        <!-- Control Header & Filters -->
-        <div class="glass-card"
-          style="padding: 20px; margin-bottom: 24px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px;">
-          <div style="display: flex; gap: 16px; flex: 1; min-width: 280px;">
+  <!-- ===== MAIN CONTENT ===== -->
+  <div class="main-wrapper">
+
+    <div id="navbar-container"></div>
+
+    <main class="page-content animate-fade-in">
+      <!-- Header & Filters -->
+      <div class="glass-card" style="padding: 20px; margin-bottom: 24px;">
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px;">
+          <div style="display: flex; gap: 16px; flex: 1; min-width: 280px; align-items: center;">
             <div class="search-box" style="flex: 1;">
               <i class="bx bx-search search-icon"></i>
               <input type="text" id="intern-search-input" class="form-control"
                 placeholder="Search intern by name, ID, or college...">
             </div>
-
             <select id="intern-dept-filter" class="form-control" style="width: 180px;">
               <option value="">All Departments</option>
               <option value="Pharmacy">Pharmacy</option>
@@ -37,8 +199,11 @@
               <option value="General Surgery">General Surgery</option>
               <option value="Pathology Lab">Pathology Lab</option>
               <option value="Physiotherapy OPD">Physiotherapy OPD</option>
+              <option value="Outdoor">Outdoor</option>
+              <option value="Indoor">Indoor</option>
+              <option value="Emergency Ward">Emergency Ward</option>
+              <option value="General Medicine">General Medicine</option>
             </select>
-
             <select id="intern-course-filter" class="form-control" style="width: 180px;">
               <option value="">All Courses</option>
               <option value="Diploma Pharmacy">Diploma Pharmacy</option>
@@ -46,70 +211,84 @@
               <option value="Nursing">Nursing</option>
               <option value="DMLT">DMLT</option>
               <option value="Physiotherapy">Physiotherapy</option>
+              <option value="GNM">GNM</option>
+              <option value="ANM">ANM</option>
             </select>
           </div>
-
           <button id="add-intern-btn" class="btn btn-primary">
             <i class="bx bx-plus"></i> Add New Intern
           </button>
         </div>
+      </div>
 
-        <!-- Intern Table -->
-        <div class="glass-card" style="padding: 24px;">
-          <div class="table-container">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Intern ID</th>
-                  <th>Student &amp; College</th>
-                  <th>Course</th>
-                  <th>Department</th>
-                  <th>Training Dates</th>
-                  <th>Days Progress</th>
-                  <th>Attendance %</th>
-                  <th>Certificate</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="intern-tbody">
-                <!-- Dynamic Rows -->
-              </tbody>
-            </table>
+      <!-- Table -->
+      <div class="glass-card" style="padding: 24px;">
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Intern ID</th>
+                <th>Student & College</th>
+                <th>Course</th>
+                <th>Department</th>
+                <th>Training Dates</th>
+                <th>Progress</th>
+                <th>Attendance</th>
+                <th>Certificate</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="intern-tbody">
+              <tr>
+                <td colspan="9" style="padding: 40px;">
+                  <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <div class="skeleton" style="width: 100%; height: 40px;"></div>
+                    <div class="skeleton" style="width: 100%; height: 40px;"></div>
+                    <div class="skeleton" style="width: 100%; height: 40px;"></div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div id="empty-state" class="empty-state" style="display: none;">
+            <i class="bx bx-user-x"></i>
+            <h3>No interns found</h3>
+            <p>Add a new intern to get started.</p>
           </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </main>
   </div>
 
-  <!-- Add/Edit Intern Modal -->
+  <!-- ===== MODALS ===== -->
+
+  <!-- Add/Edit Modal -->
   <div class="modal-overlay" id="intern-modal">
     <div class="modal-container">
       <div class="modal-header">
-        <h3 id="intern-modal-title">Add New Intern</h3>
+        <h3 id="modal-title"><i class="bx bx-user-plus"></i> Add New Intern</h3>
         <button class="modal-close-btn" id="close-intern-modal"><i class="bx bx-x"></i></button>
       </div>
       <form id="intern-form">
         <div class="modal-body">
-          <input type="hidden" id="intern-id-input">
-
-          <div class="grid-2">
+          <input type="hidden" id="intern-edit-id">
+          <div class="form-grid-2">
             <div class="form-group">
-              <label class="form-label">Full Name</label>
+              <label class="form-label">Full Name *</label>
               <input type="text" id="intern-name" class="form-control" required placeholder="e.g. Rahul Verma">
             </div>
             <div class="form-group">
-              <label class="form-label">Email Address</label>
+              <label class="form-label">Email Address *</label>
               <input type="email" id="intern-email" class="form-control" required placeholder="intern@meditrack.com">
             </div>
           </div>
-
-          <div class="grid-2">
+          <div class="form-grid-2">
             <div class="form-group">
-              <label class="form-label">Course / Program</label>
+              <label class="form-label">Course *</label>
               <select id="intern-course" class="form-control" required>
-                <option value="Diploma Pharmacy (90 Days)">Diploma Pharmacy (90 Days)</option>
-                <option value="B.Pharm (30 Days)">B.Pharm (30 Days)</option>
-                <option value="Nursing (30 Days)">Nursing (30 Days)</option>
+                <option value="Diploma Pharmacy">Diploma Pharmacy</option>
+                <option value="B.Pharm">B.Pharm</option>
+                <option value="Nursing">Nursing</option>
                 <option value="GNM">GNM</option>
                 <option value="ANM">ANM</option>
                 <option value="DMLT">DMLT</option>
@@ -118,15 +297,14 @@
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label">College / Institute</label>
+              <label class="form-label">College *</label>
               <input type="text" id="intern-college" class="form-control" required
                 placeholder="e.g. Apex Pharmacy College">
             </div>
           </div>
-
-          <div class="grid-2">
+          <div class="form-grid-2">
             <div class="form-group">
-              <label class="form-label">Assigned Department</label>
+              <label class="form-label">Department *</label>
               <select id="intern-department" class="form-control" required>
                 <option value="Outdoor">Outdoor</option>
                 <option value="Indoor">Indoor</option>
@@ -134,47 +312,70 @@
                 <option value="Physiotherapy OPD">Physiotherapy OPD</option>
                 <option value="Emergency Ward">Emergency Ward</option>
                 <option value="General Medicine">General Medicine</option>
+                <option value="Pharmacy">Pharmacy</option>
+                <option value="OPD Store">OPD Store</option>
+                <option value="General Surgery">General Surgery</option>
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Total Training Days</label>
-              <input type="number" id="intern-total-days" class="form-control" required value="90">
+              <label class="form-label">Total Training Days *</label>
+              <input type="number" id="intern-total-days" class="form-control" required value="90" min="1">
             </div>
           </div>
-
-          <div class="grid-2">
+          <div class="form-grid-2">
             <div class="form-group">
-              <label class="form-label">Joining Date</label>
+              <label class="form-label">Joining Date *</label>
               <input type="date" id="intern-joining" class="form-control" required>
             </div>
             <div class="form-group">
-              <label class="form-label">Ending Date</label>
+              <label class="form-label">Ending Date *</label>
               <input type="date" id="intern-ending" class="form-control" required>
             </div>
           </div>
-
-          <div class="form-group"
-            style="margin-top: 10px; padding: 14px; background: var(--bg-main); border-radius: var(--radius-md);">
-            <label
-              style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 700; color: var(--text-main);">
+          <div class="checkbox-card">
+            <label>
               <input type="checkbox" id="intern-cert-issued"
                 style="width: 18px; height: 18px; accent-color: var(--primary-500);">
-              Certificate Issued ☑ (Admin Only)
+              Certificate Issued (Admin Only)
             </label>
-            <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px; margin-left: 28px;">
-              Check this box to grant training completion certificate clearance to the student.
+            <p style="font-size: 12px; color: var(--text-muted); margin-top: 6px; margin-left: 28px;">
+              Check this box to grant training completion certificate clearance.
             </p>
           </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" id="cancel-intern-modal">Cancel</button>
-          <button type="submit" class="btn btn-primary"><i class="bx bx-save"></i> Save Intern Record</button>
+          <button type="submit" class="btn btn-primary" id="save-intern-btn">
+            <i class="bx bx-save"></i> <span id="save-btn-text">Save Intern</span>
+          </button>
         </div>
       </form>
     </div>
   </div>
 
+  <!-- Delete Modal -->
+  <div class="modal-overlay" id="delete-modal">
+    <div class="modal-container" style="max-width: 400px;">
+      <div class="modal-header">
+        <h3><i class="bx bx-trash"></i> Confirm Delete</h3>
+        <button class="modal-close-btn" id="close-delete-modal"><i class="bx bx-x"></i></button>
+      </div>
+      <div class="modal-body" style="text-align: center;">
+        <i class="bx bx-error-circle" style="font-size: 48px; color: var(--accent-rose);"></i>
+        <p style="margin-top: 16px; font-weight: 700; color: var(--text-main);">Delete this intern?</p>
+        <p style="font-size: 13px; color: var(--text-muted);">This action cannot be undone.</p>
+      </div>
+      <div class="modal-footer" style="justify-content: center;">
+        <button type="button" class="btn btn-secondary" id="cancel-delete">Cancel</button>
+        <button type="button" class="btn btn-danger" id="confirm-delete">
+          <i class="bx bx-trash"></i> Delete
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script type="module" src="assets/js/intern.js"></script>
+
 </body>
 
 </html>

@@ -4,24 +4,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <!-- 🔥 THEME FOUC FIX -->
     <script>
         (function () {
             const savedTheme = localStorage.getItem('meditrack_theme') || 'light';
             document.documentElement.setAttribute('data-theme', savedTheme);
         })();
     </script>
-
-    <title>Sign Up - MediTrack Hospital Management</title>
-
+    <title>Sign Up - MediTrack</title>
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="assets/css/theme.css">
     <link rel="stylesheet" href="assets/css/components.css">
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
 
     <style>
-        body.signup-body {
+        body {
             display: flex;
             align-items: center;
             justify-content: center;
@@ -30,31 +26,6 @@
             background-size: 400% 400%;
             animation: shimmer 15s ease infinite;
             padding: 20px;
-        }
-
-        .signup-container {
-            width: 100%;
-            max-width: 480px;
-            padding: 40px;
-        }
-
-        .signup-header {
-            text-align: center;
-            margin-bottom: 28px;
-        }
-
-        .signup-logo {
-            width: 64px;
-            height: 64px;
-            margin: 0 auto 16px;
-            background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
-            border-radius: var(--radius-lg);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 32px;
-            box-shadow: 0 8px 24px rgba(14, 165, 233, 0.4);
         }
 
         @keyframes shimmer {
@@ -70,18 +41,73 @@
                 background-position: 0% 50%;
             }
         }
+
+        .signup-box {
+            width: 100%;
+            max-width: 480px;
+            padding: 40px;
+        }
+
+        .signup-logo {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 16px;
+            background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 32px;
+        }
+
+        .pass-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .pass-wrap input {
+            width: 100%;
+            padding-right: 45px !important;
+        }
+
+        .eye-btn {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .eye-btn:hover {
+            color: var(--text-main);
+        }
     </style>
 </head>
 
-<body class="signup-body">
+<body>
 
-    <div class="glass-card signup-container animate-fade-in">
-        <div class="signup-header">
+    <!-- EmailJS CDN -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
+    <div class="glass-card signup-box animate-fade-in">
+        <div style="text-align: center; margin-bottom: 32px;">
             <div class="signup-logo">
                 <i class="bx bx-plus-medical"></i>
             </div>
-            <h2 style="font-size: 24px; font-weight: 800; color: var(--text-main);">Create Account</h2>
-            <p style="font-size: 14px; color: var(--text-muted); margin-top: 4px;">Join MediTrack Hospital System</p>
+            <h2 style="font-size: 24px; font-weight: 800;">Create Account</h2>
+            <p style="font-size: 14px; color: var(--text-muted); margin-top: 4px;">
+                Join MediTrack Hospital System
+            </p>
         </div>
 
         <form id="signup-form">
@@ -89,7 +115,7 @@
                 <label class="form-label" for="signup-name">Full Name</label>
                 <div class="search-box">
                     <i class="bx bx-user search-icon"></i>
-                    <input type="text" id="signup-name" class="form-control" placeholder="Dr. A. K. Sharma" required>
+                    <input type="text" id="signup-name" class="form-control" placeholder="John Doe" required>
                 </div>
             </div>
 
@@ -101,53 +127,67 @@
                 </div>
             </div>
 
-            <div class="grid-2">
-                <div class="form-group">
-                    <label class="form-label" for="signup-password">Password</label>
-                    <div class="search-box">
-                        <i class="bx bx-lock-alt search-icon"></i>
-                        <input type="password" id="signup-password" class="form-control" placeholder="Min 6 characters"
-                            minlength="6" required>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label" for="signup-confirm">Confirm Password</label>
-                    <div class="search-box">
-                        <i class="bx bx-lock search-icon"></i>
-                        <input type="password" id="signup-confirm" class="form-control" placeholder="Repeat password"
-                            required>
-                    </div>
+            <div class="form-group">
+                <label class="form-label" for="signup-password">Password</label>
+                <div class="search-box pass-wrap">
+                    <i class="bx bx-lock-alt search-icon"></i>
+                    <input type="password" id="signup-password" class="form-control" placeholder="Min 6 characters"
+                        minlength="6" required>
+                    <button type="button" class="eye-btn" id="eye-pass">
+                        <i class="bx bx-hide"></i>
+                    </button>
                 </div>
             </div>
 
             <div class="form-group">
-                <label class="form-label" for="signup-role">Select Role</label>
-                <select id="signup-role" class="form-control" required>
-                    <option value="" disabled selected>Choose your role...</option>
-                    <option value="admin">Admin (Hospital Administration)</option>
-                    <option value="student">Student / Intern</option>
-                    <option value="supervisor">Supervisor / Doctor</option>
-                </select>
+                <label class="form-label" for="signup-confirm">Confirm Password</label>
+                <div class="search-box pass-wrap">
+                    <i class="bx bx-lock search-icon"></i>
+                    <input type="password" id="signup-confirm" class="form-control" placeholder="Repeat password"
+                        required>
+                    <button type="button" class="eye-btn" id="eye-confirm">
+                        <i class="bx bx-hide"></i>
+                    </button>
+                </div>
             </div>
 
-            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 12px; padding: 12px;">
+            <button type="submit" class="btn btn-primary" id="submit-btn"
+                style="width: 100%; margin-top: 12px; padding: 14px; font-size: 16px;">
                 <i class="bx bx-user-plus"></i> Create Account
             </button>
         </form>
 
-        <!-- Sign In Link -->
         <div
             style="text-align: center; margin-top: 24px; padding-top: 20px; border-top: 1px dashed var(--border-color);">
             <p style="font-size: 14px; color: var(--text-muted);">
                 Already have an account?
-                <a href="login.html" style="color: var(--primary-500); font-weight: 700; text-decoration: none;">Sign
-                    In</a>
+                <a href="login.html" style="color: var(--primary-500); font-weight: 700;">Sign In</a>
             </p>
         </div>
     </div>
 
     <script type="module">
         import { auth } from "./assets/js/auth.js";
+
+        function setupEye(inputId, btnId) {
+            const input = document.getElementById(inputId);
+            const btn = document.getElementById(btnId);
+            btn.addEventListener('click', () => {
+                const icon = btn.querySelector('i');
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.classList.remove('bx-hide');
+                    icon.classList.add('bx-show');
+                } else {
+                    input.type = 'password';
+                    icon.classList.remove('bx-show');
+                    icon.classList.add('bx-hide');
+                }
+            });
+        }
+
+        setupEye('signup-password', 'eye-pass');
+        setupEye('signup-confirm', 'eye-confirm');
 
         document.getElementById("signup-form").addEventListener("submit", async (e) => {
             e.preventDefault();
@@ -156,42 +196,34 @@
             const email = document.getElementById("signup-email").value.trim();
             const password = document.getElementById("signup-password").value;
             const confirm = document.getElementById("signup-confirm").value;
-            const role = document.getElementById("signup-role").value;
+            const btn = document.getElementById("submit-btn");
 
-            // Validation
-            if (password !== confirm) {
-                alert("Passwords do not match!");
-                return;
-            }
-            if (password.length < 6) {
-                alert("Password must be at least 6 characters.");
-                return;
-            }
-            if (!role) {
-                alert("Please select a role.");
-                return;
-            }
+            if (password !== confirm) { alert("Passwords do not match!"); return; }
+            if (password.length < 6) { alert("Password must be at least 6 characters."); return; }
 
-            const btn = e.target.querySelector('button[type="submit"]');
-            const originalText = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = '<i class="bx bx-loader bx-spin"></i> Creating Account...';
 
             try {
-                await auth.register(email, password, name, role);
-                alert("Account created successfully! Please sign in.");
-                window.location.href = "login.html";
+                const result = await auth.register(email, password, name);
+
+                if (result.testMode) {
+                    alert(`Account created!\n\nTEST OTP (EmailJS not loaded):\n${result.otp}\n\nEnter this on next page.`);
+                } else {
+                    alert("Account created! OTP sent to your email.");
+                }
+
+                window.location.href = "verify-otp.html";
             } catch (error) {
                 btn.disabled = false;
-                btn.innerHTML = originalText;
+                btn.innerHTML = '<i class="bx bx-user-plus"></i> Create Account';
 
-                let msg = "Sign Up Failed";
-                if (error.code === "auth/email-already-in-use") msg = "This email is already registered.";
-                else if (error.code === "auth/invalid-email") msg = "Invalid email address.";
-                else if (error.code === "auth/weak-password") msg = "Password is too weak (min 6 characters).";
-                else msg = error.message;
-
-                alert(msg);
+                const map = {
+                    "auth/email-already-in-use": "This email is already registered.",
+                    "auth/invalid-email": "Invalid email address.",
+                    "auth/weak-password": "Password must be at least 6 characters."
+                };
+                alert(map[error.code] || error.message);
             }
         });
     </script>

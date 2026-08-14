@@ -20,11 +20,18 @@
 }
 
 @media (max-width: 1200px) {
-  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 768px) {
-  .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
+
+  .grid-4,
+  .grid-3,
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* 2. KPI Analytics Cards */
@@ -48,19 +55,65 @@
   flex-shrink: 0;
 }
 
-.kpi-icon.blue { background-color: var(--primary-50); color: var(--primary-500); }
-.kpi-icon.emerald { background-color: #ecfdf5; color: var(--accent-emerald); }
-.kpi-icon.rose { background-color: #ffe4e6; color: var(--accent-rose); }
-.kpi-icon.purple { background-color: #f3e8ff; color: var(--secondary-500); }
-.kpi-icon.amber { background-color: #fffbeb; color: var(--accent-amber); }
-.kpi-icon.teal { background-color: #ccfbf1; color: var(--accent-teal); }
+.kpi-icon.blue {
+  background-color: var(--primary-50);
+  color: var(--primary-500);
+}
 
-[data-theme="dark"] .kpi-icon.blue { background-color: rgba(14, 165, 233, 0.15); color: #38bdf8; }
-[data-theme="dark"] .kpi-icon.emerald { background-color: rgba(16, 185, 129, 0.15); color: #34d399; }
-[data-theme="dark"] .kpi-icon.rose { background-color: rgba(244, 63, 94, 0.15); color: #fb7185; }
-[data-theme="dark"] .kpi-icon.purple { background-color: rgba(79, 70, 229, 0.15); color: #818cf8; }
-[data-theme="dark"] .kpi-icon.amber { background-color: rgba(245, 158, 11, 0.15); color: #fbbf24; }
-[data-theme="dark"] .kpi-icon.teal { background-color: rgba(20, 184, 166, 0.15); color: #2dd4bf; }
+.kpi-icon.emerald {
+  background-color: #ecfdf5;
+  color: var(--accent-emerald);
+}
+
+.kpi-icon.rose {
+  background-color: #ffe4e6;
+  color: var(--accent-rose);
+}
+
+.kpi-icon.purple {
+  background-color: #f3e8ff;
+  color: var(--secondary-500);
+}
+
+.kpi-icon.amber {
+  background-color: #fffbeb;
+  color: var(--accent-amber);
+}
+
+.kpi-icon.teal {
+  background-color: #ccfbf1;
+  color: var(--accent-teal);
+}
+
+[data-theme="dark"] .kpi-icon.blue {
+  background-color: rgba(14, 165, 233, 0.15);
+  color: #38bdf8;
+}
+
+[data-theme="dark"] .kpi-icon.emerald {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+}
+
+[data-theme="dark"] .kpi-icon.rose {
+  background-color: rgba(244, 63, 94, 0.15);
+  color: #fb7185;
+}
+
+[data-theme="dark"] .kpi-icon.purple {
+  background-color: rgba(79, 70, 229, 0.15);
+  color: #818cf8;
+}
+
+[data-theme="dark"] .kpi-icon.amber {
+  background-color: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+}
+
+[data-theme="dark"] .kpi-icon.teal {
+  background-color: rgba(20, 184, 166, 0.15);
+  color: #2dd4bf;
+}
 
 .kpi-content {
   flex: 1;
@@ -256,7 +309,9 @@
   font-weight: 700;
 }
 
-.status-pill.active, .status-pill.present, .status-pill.issued {
+.status-pill.active,
+.status-pill.present,
+.status-pill.issued {
   background-color: rgba(16, 185, 129, 0.15);
   color: #059669;
 }
@@ -267,7 +322,9 @@
   color: #34d399;
 }
 
-.status-pill.absent, .status-pill.inactive, .status-pill.pending {
+.status-pill.absent,
+.status-pill.inactive,
+.status-pill.pending {
   background-color: rgba(244, 63, 94, 0.15);
   color: #e11d48;
 }
@@ -278,7 +335,8 @@
   color: #fb7185;
 }
 
-.status-pill.leave, .status-pill.warning {
+.status-pill.leave,
+.status-pill.warning {
   background-color: rgba(245, 158, 11, 0.15);
   color: #d97706;
 }
@@ -398,6 +456,41 @@
   border-top: 1px dashed var(--border-color);
 }
 
+/* =========================================
+   FIX: Doctor Modal
+   ========================================= */
+
+.modal {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  width: 100%;
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  transform: scale(0.95);
+  transition: transform var(--transition-fast);
+}
+
+.modal-overlay.active .modal {
+  transform: scale(1);
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-close:hover {
+  color: var(--text-main);
+}
+
+
 /* 10. Modal Dialogs */
 .modal-overlay {
   position: fixed;
@@ -473,4 +566,75 @@
   justify-content: flex-end;
   gap: 12px;
   background-color: var(--bg-main);
+}
+
+/* =========================================
+   DOCTOR TOAST NOTIFICATION
+========================================= */
+
+#toast {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+
+  z-index: 99999;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  padding: 14px 18px;
+
+  min-width: 280px;
+
+  border-radius: 10px;
+
+  background: var(--bg-surface, #ffffff);
+  color: var(--text-main, #111827);
+
+  border: 1px solid var(--border-color, #e5e7eb);
+
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.18);
+
+  opacity: 0;
+  visibility: hidden;
+
+  transform: translateX(30px);
+
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease,
+    visibility 0.25s ease;
+}
+
+#toast.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(0);
+}
+
+#toast.toast-success {
+  border-left: 4px solid #22c55e;
+}
+
+#toast.toast-error {
+  border-left: 4px solid #ef4444;
+}
+
+#toast i {
+  font-size: 22px;
+}
+
+#toast.toast-success i {
+  color: #22c55e;
+}
+
+#toast.toast-error i {
+  color: #ef4444;
+}
+
+#toast-message {
+  font-size: 14px;
+  font-weight: 600;
 }

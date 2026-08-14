@@ -1,0 +1,40 @@
+warning: in the working copy of 'assets/css/components.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'assets/js/app.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'assets/js/attendance.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'assets/js/auth.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'assets/js/certificate.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'assets/js/dashboard.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'assets/js/report.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'assets/js/schedule.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'assets/js/training.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'attendance.html', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'dashboard.html', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'doctor.html', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'schedule.html', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'settings.html', LF will be replaced by CRLF the next time Git touches it
+ assets/css/components.css  |  198 [32m++++++[m[31m-[m
+ assets/js/app.js           |  243 [32m+++++[m[31m---[m
+ assets/js/attendance.js    |  248 [32m+++++[m[31m---[m
+ assets/js/auth.js          |  361 [32m++++++++++[m[31m--[m
+ assets/js/certificate.js   |  279 [32m++++++[m[31m---[m
+ assets/js/dashboard.js     |  279 [32m++++++[m[31m---[m
+ assets/js/doctor.js        | 1334 [32m++++++++++++++++++++++++++++++++++++++++[m[31m----[m
+ assets/js/firebase-auth.js |   97 [32m++[m[31m--[m
+ assets/js/firebase-db.js   |   87 [32m+++[m
+ assets/js/intern.js        | 1062 [32m++++++++++++++++++++++++++++++[m[31m-----[m
+ assets/js/report.js        |  164 [32m+++[m[31m---[m
+ assets/js/schedule.js      |  222 [32m++++[m[31m----[m
+ assets/js/settings.js      |  100 [32m++[m[31m--[m
+ assets/js/training.js      |   57 [32m+[m[31m-[m
+ assets/js/user.js          |   46 [32m+[m[31m-[m
+ attendance.html            |  303 [32m++++++++[m[31m--[m
+ dashboard.html             |  213 [32m++++[m[31m---[m
+ doctor.html                |  517 [32m+++++++++++++++[m[31m--[m
+ firebase/firestore.rules   |   56 [32m+[m[31m-[m
+ intern.html                |  337 [32m++++++++[m[31m---[m
+ login.html                 |   94 [32m+++[m[31m-[m
+ schedule.html              |   46 [32m+[m[31m-[m
+ settings.html              |  247 [32m+++[m[31m-----[m
+ signup.html                |  202 [32m++++[m[31m---[m
+ user.html                  |  478 [32m+++++++++++[m[31m-----[m
+ 25 files changed, 5614 insertions(+), 1656 deletions(-)

@@ -55,6 +55,93 @@ export async function saveUser(userData) {
   }
 }
 
+export async function addUser(userData) {
+  try {
+    const docId = userData.id || userData.uid || "usr_" + Date.now();
+    const payload = { ...userData, id: docId, createdAt: new Date().toISOString() };
+    await setDoc(doc(db, "users", docId), payload, { merge: true });
+    return payload;
+  } catch (error) {
+    console.error("[Firestore] Error adding user:", error);
+    throw error;
+  }
+}
+
+export async function updateUser(id, userData) {
+  try {
+    const docRef = doc(db, "users", id);
+    await updateDoc(docRef, { ...userData, updatedAt: new Date().toISOString() });
+    return { id, ...userData };
+  } catch (error) {
+    console.error(`[Firestore] Error updating user ${id}:`, error);
+    throw error;
+  }
+}
+
+export async function deleteUser(id) {
+  try {
+    await deleteDoc(doc(db, "users", id));
+    return true;
+  } catch (error) {
+    console.error(`[Firestore] Error deleting user ${id}:`, error);
+    throw error;
+  }
+}
+
+export async function getStudentData(uid) {
+  try {
+    return await getUserById(uid);
+  } catch (error) {
+    console.error("[Firestore] Error fetching student data:", error);
+    return null;
+  }
+}
+
+export async function getStudentInternRecord(email) {
+  try {
+    if (!email) return null;
+    const interns = await getInterns();
+    return interns.find(i => i.email && i.email.toLowerCase() === email.toLowerCase()) || null;
+  } catch (error) {
+    console.error("[Firestore] Error fetching student intern record:", error);
+    return null;
+  }
+}
+
+export async function getTodaySchedule(department = "Pharmacy") {
+  try {
+    const trainingList = await getTraining();
+    const deptSchedule = trainingList.filter(t => t.department === department);
+    if (deptSchedule.length > 0) {
+      return deptSchedule.map(t => ({
+        time: t.timing || t.duration || "09:00 AM - 05:00 PM",
+        task: t.rotationName || t.name || "Rotational Training",
+        status: t.status || "Daily"
+      }));
+    }
+    return [
+      { time: "09:00 AM - 11:00 AM", task: "Outdoor Medicine Dispensing", status: "Daily" },
+      { time: "11:00 AM - 01:00 PM", task: "Stock Check & Inventory", status: "Daily" },
+      { time: "02:00 PM - 04:00 PM", task: "Medical Camp / Clinical Duty", status: "Weekly" },
+      { time: "04:00 PM - 05:00 PM", task: "Compounding & Labeling", status: "Daily" }
+    ];
+  } catch (error) {
+    console.error("[Firestore] Error fetching today's schedule:", error);
+    return [];
+  }
+}
+
+export async function getStudentAttendance(internId) {
+  try {
+    const attendance = await getAttendance();
+    return attendance.filter(a => a.internId === internId);
+  } catch (error) {
+    console.error("[Firestore] Error fetching student attendance:", error);
+    return [];
+  }
+}
+
+
 // ==========================================
 // 2. INTERNS COLLECTION (STEP 4)
 // ==========================================

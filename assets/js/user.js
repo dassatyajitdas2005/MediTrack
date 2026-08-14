@@ -8,46 +8,36 @@ let allUsers = [];
 let editingUserId = null;
 
 document.addEventListener("DOMContentLoaded", async () => {
-    await auth.init(); // 🔥 Firebase se confirm karo
-    auth.checkAuth(['admin']); // 🔥 Sirf admin allowed
+    await auth.init();
+    auth.checkAuth(['admin', 'supervisor']);
     renderLayout("user");
-    // ... baaki same
-});
-
-
-document.addEventListener("DOMContentLoaded", () => {
-    renderLayout("user");
-
-    if (!auth.isAdmin()) {
-        document.getElementById("add-user-btn").style.display = "none";
-    }
 
     const modal = document.getElementById("user-modal");
-    const modalTitle = modal.querySelector(".modal-header h3");
+    const modalTitle = modal?.querySelector(".modal-header h3");
 
-    document.getElementById("add-user-btn").addEventListener("click", () => {
+    document.getElementById("add-user-btn")?.addEventListener("click", () => {
         editingUserId = null;
-        modalTitle.innerText = "Add New User";
-        document.getElementById("user-form").reset();
-        modal.classList.add("active");
+        if (modalTitle) modalTitle.innerText = "Add New User";
+        document.getElementById("user-form")?.reset();
+        modal?.classList.add("active");
     });
 
-    document.getElementById("close-modal").addEventListener("click", closeModal);
-    document.getElementById("cancel-user").addEventListener("click", closeModal);
+    document.getElementById("close-modal")?.addEventListener("click", closeModal);
+    document.getElementById("cancel-user")?.addEventListener("click", closeModal);
 
     function closeModal() {
-        modal.classList.remove("active");
+        modal?.classList.remove("active");
         editingUserId = null;
-        modalTitle.innerText = "Add New User";
-        document.getElementById("user-form").reset();
+        if (modalTitle) modalTitle.innerText = "Add New User";
+        document.getElementById("user-form")?.reset();
     }
 
-    document.getElementById("user-search").addEventListener("input", filterAndRenderUsers);
-    document.getElementById("role-filter").addEventListener("change", filterAndRenderUsers);
+    document.getElementById("user-search")?.addEventListener("input", filterAndRenderUsers);
+    document.getElementById("role-filter")?.addEventListener("change", filterAndRenderUsers);
 
     loadUsers();
 
-    document.getElementById("user-form").addEventListener("submit", async (e) => {
+    document.getElementById("user-form")?.addEventListener("submit", async (e) => {
         e.preventDefault();
 
         const name = document.getElementById("user-name").value.trim();
@@ -69,10 +59,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 alert("User Created Successfully!");
             }
 
-            document.getElementById("user-form").reset();
-            modal.classList.remove("active");
+            document.getElementById("user-form")?.reset();
+            modal?.classList.remove("active");
             editingUserId = null;
-            modalTitle.innerText = "Add New User";
+            if (modalTitle) modalTitle.innerText = "Add New User";
             loadUsers();
 
         } catch (error) {

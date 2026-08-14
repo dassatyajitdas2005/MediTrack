@@ -1,80 +1,72 @@
-/* MediTrack - Firebase Authentication Module (Production) */
+/* MediTrack - Firebase Authentication Module (Student Focused) */
 
 import { auth, db } from "./firebase-config.js";
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
-  onAuthStateChanged
+  onAuthStateChanged,
+  sendEmailVerification,
+  reload
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 import {
   doc,
   getDoc,
-  setDoc
+  setDoc,
+  updateDoc
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
 const CURRENT_USER_KEY = "meditrack_firebase_user";
 
 /**
- * Register new user → Firebase Auth + Firestore profile
- */
-export async function registerUser(email, password, role = "student", extraData = {}) {
-  try {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    const user = userCredential.user;
-
-    const userData = {
-      uid: user.uid,
-      email: email.toLowerCase(),
-      role: role,
-      name: extraData.name || email.split("@")[0].toUpperCase(),
-      department: extraData.department || (role === "admin" ? "Administration" : "Pharmacy"),
-      status: "Active",
-      createdAt: new Date().toISOString(),
-      ...extraData
-    };
-
-    await setDoc(doc(db, "users", user.uid), userData);
-    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(userData));
-
-    return userData;
-  } catch (error) {
-    console.error("[FirebaseAuth] Registration Error:", error.code, error.message);
-    throw error;
-  }
-}
-
-/**
- * Login → Firebase Auth verify → Firestore se profile fetch
- * Role client se nahi aata, Firestore se aata hai (Security)
+ * Login → Verify email → Fetch role → Allow access
  */
 export async function login(email, password) {
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
 
+    // Reload user to get latest emailVerified status
+    await reload(user);
+
+    // Check email verification
+    if (!user.emailVerified) {
+      // Still return user but flag as unverified
+      const userDocRef = doc(db, "users", user.uid);
+      const userDoc = await getDoc(userDocRef);
+      let userData = userDoc.exists() ? userDoc.data() : {
+        uid: user.uid, email: user.email, role: "student", name: "Student"
+      };
+
+      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(userData));
+      return { userData, emailVerified: false };
+    }
+
+    // Email is verified → fetch full profile
     const userDocRef = doc(db, "users", user.uid);
     const userDoc = await getDoc(userDocRef);
 
     let userData;
     if (userDoc.exists()) {
       userData = userDoc.data();
+      // Update emailVerified status in Firestore
+      await setDoc(userDocRef, { emailVerified: true }, { merge: true });
     } else {
-      // Agar Firestore doc missing hai (rare case)
       userData = {
         uid: user.uid,
         email: user.email,
         role: "student",
-        name: user.email.split("@")[0].toUpperCase(),
+        name: user.email.split("@")[0],
         department: "Pharmacy",
-        status: "Active",
+        status: "active",
+        emailVerified: true,
         createdAt: new Date().toISOString()
       };
       await setDoc(userDocRef, userData);
     }
 
     localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(userData));
-    return userData;
+    return { userData, emailVerified: true };
 
   } catch (error) {
     console.error("[FirebaseAuth] Login Error:", error.code, error.message);
@@ -83,7 +75,17 @@ export async function login(email, password) {
 }
 
 /**
- * Logout → Firebase se + local cache clear
+ * Resend verification email
+ */
+export async function resendVerificationEmail() {
+  const user = auth.currentUser;
+  if (!user) throw new Error("No user logged in");
+  await sendEmailVerification(user);
+  return "Verification email resent!";
+}
+
+/**
+ * Logout
  */
 export async function logout() {
   try {
@@ -97,31 +99,28 @@ export async function logout() {
 }
 
 /**
- * Sync access ke liye cached user
+ * Get cached user
  */
 export function getCurrentUser() {
-  const cachedUser = localStorage.getItem(CURRENT_USER_KEY);
-  if (cachedUser) {
-    try {
-      return JSON.parse(cachedUser);
-    } catch (e) {
-      return null;
-    }
+  const cached = localStorage.getItem(CURRENT_USER_KEY);
+  if (cached) {
+    try { return JSON.parse(cached); } catch (e) { return null; }
   }
   return null;
 }
 
 /**
- * Background verification — har page load pe Firebase se confirm karta hai
+ * Background session check
  */
 export function checkSession(callback) {
   onAuthStateChanged(auth, async (user) => {
     if (user) {
+      await reload(user); // Refresh emailVerified status
       const userDocRef = doc(db, "users", user.uid);
       const userDoc = await getDoc(userDocRef);
       const userData = userDoc.exists()
-        ? userDoc.data()
-        : { uid: user.uid, email: user.email, role: "student", name: "User" };
+        ? { ...userDoc.data(), emailVerified: user.emailVerified }
+        : { uid: user.uid, email: user.email, role: "student", name: "Student", emailVerified: user.emailVerified };
 
       localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(userData));
       if (callback) callback(userData);

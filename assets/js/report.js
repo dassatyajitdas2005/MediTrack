@@ -1,106 +1,126 @@
-/* MediTrack - Reports & Export (Firebase Only) */
+/* MediTrack - Reports & Summary Controller */
 
 import * as fbDb from './firebase-db.js';
 import { auth } from './auth.js';
 import { renderLayout } from './app.js';
 
-
 document.addEventListener('DOMContentLoaded', async () => {
   await auth.init();
   auth.checkAuth(['admin', 'supervisor']);
   renderLayout('report');
-  // ... baaki same
+  initReports();
 });
 
-
 async function initReports() {
-  document.getElementById('generate-report-btn')?.addEventListener('click', generateReport);
   document.getElementById('export-csv-btn')?.addEventListener('click', exportToCSV);
-  document.getElementById('export-pdf-btn')?.addEventListener('click', () => alert('PDF export: Use browser print (Ctrl+P)'));
+  document.getElementById('print-report-btn')?.addEventListener('click', () => window.print());
+
+  await loadReportData();
 }
 
-async function generateReport() {
-  const reportType = document.getElementById('report-type')?.value || 'all';
-  const fromDate = document.getElementById('report-from')?.value;
-  const toDate = document.getElementById('report-to')?.value;
+async function loadReportData() {
+  try {
+    const interns = await fbDb.getInterns();
+    const doctors = await fbDb.getDoctors();
+    const attendance = await fbDb.getAttendance();
 
-  const interns = await fbDb.getInterns();
-  const doctors = await fbDb.getDoctors();
-  const attendance = await fbDb.getAttendance();
+    const totalLogs = attendance.length;
+    const presentLogs = attendance.filter(a => a.status === 'Present').length;
+    const absentLogs = attendance.filter(a => a.status === 'Absent').length;
 
-  let filteredAttendance = attendance;
-  if (fromDate) filteredAttendance = filteredAttendance.filter(a => a.date >= fromDate);
-  if (toDate) filteredAttendance = filteredAttendance.filter(a => a.date <= toDate);
+    let totalAttPct = 0;
+    interns.forEach(i => totalAttPct += (i.attendancePercentage || 0));
+    const avgAttendance = interns.length > 0 ? Math.round(totalAttPct / interns.length) : 0;
 
-  const container = document.getElementById('report-output');
-  if (!container) return;
+    // Update KPI Metrics
+    setElementText('rpt-total-logs', totalLogs);
+    setElementText('rpt-present-count', presentLogs);
+    setElementText('rpt-absent-count', absentLogs);
+    setElementText('rpt-avg-attendance', `${avgAttendance}%`);
 
-  let html = `<div class="glass-card" style="padding:24px;">`;
+    // Render Intern Master Table
+    const internTbody = document.getElementById('rpt-interns-tbody');
+    if (internTbody) {
+      if (interns.length === 0) {
+        internTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:24px; color:var(--text-muted);">No intern records found in Firestore.</td></tr>`;
+      } else {
+        internTbody.innerHTML = interns.map(intern => {
+          const completed = intern.completedDays || 0;
+          const total = intern.totalTrainingDays || 30;
+          return `
+            <tr>
+              <td><strong>${escapeHtml(intern.internId)}</strong></td>
+              <td>${escapeHtml(intern.name)}</td>
+              <td>${escapeHtml(intern.course)}</td>
+              <td>${escapeHtml(intern.department)}</td>
+              <td>${completed} / ${total} days</td>
+              <td><strong>${intern.attendancePercentage || 0}%</strong></td>
+              <td>
+                <span class="status-pill ${intern.certificateIssued ? 'active' : 'warning'}">
+                  ${intern.certificateIssued ? 'Issued' : 'Pending'}
+                </span>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+    }
 
-  if (reportType === 'all' || reportType === 'intern') {
-    html += `<h3 style="margin-bottom:16px;"><i class="bx bx-user"></i> Intern Summary</h3>`;
-    html += `<table class="data-table" style="margin-bottom:24px;"><thead><tr><th>ID</th><th>Name</th><th>Dept</th><th>Progress</th><th>Attendance</th><th>Status</th></tr></thead><tbody>`;
-    html += interns.map(i => {
-      const progress = getInternProgress(i);
-      return `<tr><td>${escapeHtml(i.internId)}</td><td>${escapeHtml(i.name)}</td><td>${escapeHtml(i.department)}</td><td>${progress.progressPercent}%</td><td>${i.attendancePercentage || 0}%</td><td>${progress.status}</td></tr>`;
-    }).join('');
-    html += `</tbody></table>`;
+    // Render Doctor OPD Master Table
+    const doctorTbody = document.getElementById('rpt-doctors-tbody');
+    if (doctorTbody) {
+      if (doctors.length === 0) {
+        doctorTbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:24px; color:var(--text-muted);">No doctor records found in Firestore.</td></tr>`;
+      } else {
+        doctorTbody.innerHTML = doctors.map(doc => {
+          const days = Array.isArray(doc.availableDays) ? doc.availableDays.join(', ') : 'N/A';
+          return `
+            <tr>
+              <td><strong>${escapeHtml(doc.id || doc.doctorId)}</strong></td>
+              <td>${escapeHtml(doc.name)}</td>
+              <td>${escapeHtml(doc.department)}</td>
+              <td>${escapeHtml(doc.room || 'N/A')}</td>
+              <td>${escapeHtml(days)}</td>
+              <td>${escapeHtml(doc.opdTiming || 'N/A')}</td>
+            </tr>
+          `;
+        }).join('');
+      }
+    }
+
+  } catch (error) {
+    console.error('[Reports] Error loading report data:', error);
   }
-
-  if (reportType === 'all' || reportType === 'attendance') {
-    html += `<h3 style="margin-bottom:16px;"><i class="bx bx-calendar-check"></i> Attendance Records (${filteredAttendance.length})</h3>`;
-    html += `<table class="data-table" style="margin-bottom:24px;"><thead><tr><th>Date</th><th>Intern ID</th><th>Status</th><th>Remarks</th></tr></thead><tbody>`;
-    html += filteredAttendance.map(a => `<tr><td>${escapeHtml(a.date)}</td><td>${escapeHtml(a.internId)}</td><td><span class="status-pill ${a.status.toLowerCase()}">${a.status}</span></td><td>${escapeHtml(a.remarks) || '-'}</td></tr>`).join('');
-    html += `</tbody></table>`;
-  }
-
-  if (reportType === 'all' || reportType === 'doctor') {
-    html += `<h3 style="margin-bottom:16px;"><i class="bx bx-plus-medical"></i> Doctor List (${doctors.length})</h3>`;
-    html += `<table class="data-table"><thead><tr><th>Name</th><th>Department</th><th>Specialization</th><th>Room</th></tr></thead><tbody>`;
-    html += doctors.map(d => `<tr><td>${escapeHtml(d.name)}</td><td>${escapeHtml(d.department)}</td><td>${escapeHtml(d.specialization)}</td><td>${escapeHtml(d.room)}</td></tr>`).join('');
-    html += `</tbody></table>`;
-  }
-
-  html += `</div>`;
-  container.innerHTML = html;
 }
 
 function exportToCSV() {
-  const reportType = document.getElementById('report-type')?.value || 'all';
-  // Simple CSV export of visible table
-  const table = document.querySelector('#report-output table');
-  if (!table) { alert('Generate report first!'); return; }
+  const tables = document.querySelectorAll('.data-table');
+  if (!tables || tables.length === 0) {
+    alert('No data available to export!');
+    return;
+  }
 
   let csv = [];
-  table.querySelectorAll('tr').forEach(row => {
-    const cols = Array.from(row.querySelectorAll('td, th')).map(cell => `"${cell.innerText.replace(/"/g, '""')}"`);
-    csv.push(cols.join(','));
+  tables.forEach(table => {
+    table.querySelectorAll('tr').forEach(row => {
+      const cols = Array.from(row.querySelectorAll('td, th')).map(cell => `"${cell.innerText.replace(/"/g, '""')}"`);
+      csv.push(cols.join(','));
+    });
+    csv.push(''); // Blank line between tables
   });
 
   const blob = new Blob([csv.join('\n')], { type: 'text/csv' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `meditrack_report_${new Date().toISOString().split('T')[0]}.csv`;
+  a.download = `meditrack_master_report_${new Date().toISOString().split('T')[0]}.csv`;
   a.click();
   URL.revokeObjectURL(url);
 }
 
-function getInternProgress(intern) {
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  const joining = new Date(intern.joiningDate); joining.setHours(0, 0, 0, 0);
-  const ending = new Date(intern.endingDate); ending.setHours(0, 0, 0, 0);
-  let completedDays = 0;
-  if (today >= joining) {
-    completedDays = Math.ceil(Math.min(today - joining, ending - joining) / (1000 * 60 * 60 * 24));
-  }
-  completedDays = Math.max(0, Math.min(completedDays, intern.totalTrainingDays || 30));
-  const totalDays = intern.totalTrainingDays || 30;
-  const percent = totalDays > 0 ? Math.round((completedDays / totalDays) * 100) : 0;
-  let status = intern.status;
-  if (percent >= 100 || today > ending) status = 'completed';
-  else status = 'active';
-  return { completedDays, progressPercent: percent, status };
+function setElementText(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.innerText = value;
 }
 
 function escapeHtml(text) {

@@ -1,15 +1,207 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="dark">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Attendance Module - MediTrack</title>
-  
+
+  <script>
+    (function () {
+      const savedTheme = localStorage.getItem('meditrack_theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    })();
+  </script>
+
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/css/theme.css">
   <link rel="stylesheet" href="assets/css/components.css">
   <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+
+  <style>
+    /* Toast - Top Right */
+    .toast {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      padding: 14px 20px;
+      border-radius: var(--radius-md);
+      color: white;
+      font-weight: 700;
+      z-index: 9999;
+      transform: translateY(-100px);
+      opacity: 0;
+      transition: all 0.4s ease;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .toast-success {
+      background: var(--accent-emerald);
+    }
+
+    .toast-error {
+      background: var(--accent-rose);
+    }
+
+    /* Attendance Select */
+    .attendance-select {
+      padding: 8px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-main);
+      color: var(--text-main);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      outline: none;
+      transition: all 0.2s;
+      min-width: 120px;
+    }
+
+    .attendance-select:focus {
+      border-color: var(--primary-500);
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .status-present {
+      background: rgba(16, 185, 129, 0.15);
+      color: #059669;
+    }
+
+    .status-absent {
+      background: rgba(239, 68, 68, 0.15);
+      color: #dc2626;
+    }
+
+    .status-leave {
+      background: rgba(245, 158, 11, 0.15);
+      color: #d97706;
+    }
+
+    .status-half-day {
+      background: rgba(168, 85, 247, 0.15);
+      color: #9333ea;
+    }
+
+    .status-not-marked {
+      background: rgba(148, 163, 184, 0.15);
+      color: #64748b;
+    }
+
+    /* Stats Bar */
+    .stats-bar {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    .stat-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      background: var(--bg-main);
+      border: 1px solid var(--border-color);
+    }
+
+    .stat-pill i {
+      font-size: 16px;
+    }
+
+    /* Remarks */
+    .remarks-input {
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-main);
+      color: var(--text-main);
+      font-size: 12px;
+      width: 140px;
+      outline: none;
+    }
+
+    .remarks-input:focus {
+      border-color: var(--primary-500);
+    }
+
+    /* Notice */
+    .notice-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .notice-admin {
+      background: rgba(14, 165, 233, 0.1);
+      color: var(--primary-500);
+      border: 1px solid rgba(14, 165, 233, 0.2);
+    }
+
+    .notice-student {
+      background: rgba(245, 158, 11, 0.1);
+      color: var(--accent-amber);
+      border: 1px solid rgba(245, 158, 11, 0.2);
+    }
+
+    /* Skeleton */
+    .skeleton {
+      background: linear-gradient(90deg, var(--bg-main) 25%, var(--bg-surface) 50%, var(--bg-main) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 6px;
+      height: 16px;
+    }
+
+    @keyframes shimmer {
+      0% {
+        background-position: -200% 0;
+      }
+
+      100% {
+        background-position: 200% 0;
+      }
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+
+    .empty-state i {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+  </style>
 </head>
+
 <body>
   <div class="app-container">
     <div id="sidebar-container"></div>
@@ -18,50 +210,85 @@
       <div id="navbar-container"></div>
 
       <main class="page-content animate-fade-in">
-        <!-- Date Selector & Admin Save Bar -->
-        <div class="glass-card" style="padding: 20px; margin-bottom: 24px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px;">
-          <div style="display: flex; align-items: center; gap: 16px;">
-            <label class="form-label" style="margin-bottom: 0;">Select Date:</label>
-            <input type="date" id="attendance-date-picker" class="form-control" style="width: 200px;">
+      <!-- Date Selector & Control Bar -->
+      <div class="glass-card" style="padding: 20px; margin-bottom: 24px;">
+        <div
+          style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 16px;">
+          <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <i class="bx bx-calendar" style="font-size: 20px; color: var(--primary-500);"></i>
+              <label class="form-label" style="margin-bottom: 0; font-weight: 700;">Select Date:</label>
+              <input type="date" id="attendance-date-picker" class="form-control" style="width: 180px;">
+            </div>
+            <div id="admin-notice" class="notice-badge notice-admin" style="display: none;">
+              <i class="bx bx-edit-alt"></i> Admin Mode: Mark status and click Save
+            </div>
+            <div id="student-notice" class="notice-badge notice-student" style="display: none;">
+              <i class="bx bx-lock-alt"></i> Read-Only: You can only view attendance history
+            </div>
           </div>
-
-          <div id="admin-attendance-notice">
-            <span style="font-size: 13px; color: var(--text-muted);"><i class="bx bx-info-circle"></i> Admin Mode: Mark status and click Save.</span>
-          </div>
-
-          <div id="student-attendance-notice" style="display: none;">
-            <span style="font-size: 13px; color: var(--primary-500); font-weight: 700;"><i class="bx bx-lock-alt"></i> Read-Only View: Students can view attendance history.</span>
-          </div>
-
-          <button id="save-attendance-btn" class="btn btn-success">
+          <button id="save-attendance-btn" class="btn btn-success" style="display: none;">
             <i class="bx bx-check-double"></i> Save Attendance Batch
           </button>
         </div>
 
-        <!-- Attendance Data Table -->
-        <div class="glass-card" style="padding: 24px;">
-          <div class="table-container">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Intern ID</th>
-                  <th>Student &amp; College</th>
-                  <th>Department</th>
-                  <th>Attendance Status</th>
-                  <th>Shift Remarks</th>
-                  <th>Total Attendance %</th>
-                </tr>
-              </thead>
-              <tbody id="attendance-tbody">
-                <!-- Dynamic attendance rows -->
-              </tbody>
-            </table>
+        <!-- Stats Bar -->
+        <div class="stats-bar" id="stats-bar" style="display: none;">
+          <div class="stat-pill"><i class="bx bx-check-circle" style="color: var(--accent-emerald);"></i> <span
+              id="stat-present">0</span> Present</div>
+          <div class="stat-pill"><i class="bx bx-x-circle" style="color: var(--accent-rose);"></i> <span
+              id="stat-absent">0</span> Absent</div>
+          <div class="stat-pill"><i class="bx bx-time" style="color: var(--accent-amber);"></i> <span
+              id="stat-leave">0</span> Leave</div>
+          <div class="stat-pill"><i class="bx bx-minus-circle" style="color: #9333ea;"></i> <span
+              id="stat-half">0</span>
+            Half Day</div>
+          <div class="stat-pill" style="margin-left: auto;"><i class="bx bx-group"
+              style="color: var(--primary-500);"></i> <span id="stat-total">0</span> Total</div>
+        </div>
+      </div>
+
+      <!-- Attendance Table -->
+      <div class="glass-card" style="padding: 24px;">
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Intern ID</th>
+                <th>Student & College</th>
+                <th>Department</th>
+                <th>Attendance Status</th>
+                <th>Remarks</th>
+                <th>Total Attendance %</th>
+              </tr>
+            </thead>
+            <tbody id="attendance-tbody">
+              <tr>
+                <td colspan="6" style="padding: 40px;">
+                  <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <div class="skeleton" style="width: 100%; height: 40px;"></div>
+                    <div class="skeleton" style="width: 100%; height: 40px;"></div>
+                    <div class="skeleton" style="width: 100%; height: 40px;"></div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div id="empty-state" class="empty-state" style="display: none;">
+            <i class="bx bx-calendar-x"></i>
+            <h3>No interns found</h3>
+            <p>Add interns from Intern Management to start marking attendance.</p>
           </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </main>
   </div>
+</div>
+
+  <div id="toast" class="toast"></div>
 
   <script type="module" src="assets/js/attendance.js"></script>
+
 </body>
+
 </html>

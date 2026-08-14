@@ -2,58 +2,22 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Helper functions
-    function getUserRole() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    function isLoggedIn() {
+      return request.auth != null;
     }
     
-    function isAdmin() {
-      return request.auth != null && getUserRole() == 'admin';
-    }
-    
-    function isStudent() {
-      return request.auth != null && getUserRole() == 'student';
-    }
-    
-    function isSupervisor() {
-      return request.auth != null && getUserRole() == 'supervisor';
+    function isOwner(userId) {
+      return isLoggedIn() && request.auth.uid == userId;
     }
 
-    // Users collection
     match /users/{userId} {
-      allow read: if request.auth != null;
-      allow write: if isAdmin() || request.auth.uid == userId;
+      allow read: if isLoggedIn();
+      allow create: if isLoggedIn();
+      allow update: if isOwner(userId);
     }
-
-    // Interns collection
-    match /interns/{internId} {
-      allow read: if request.auth != null;
-      allow create, update, delete: if isAdmin();
-    }
-
-    // Doctors & OPD Schedule
-    match /doctors/{doctorId} {
-      allow read: if request.auth != null;
-      allow create, update, delete: if isAdmin();
-    }
-
-    // Attendance records
-    match /attendance/{attendanceId} {
-      allow read: if request.auth != null;
-      allow create, update: if isAdmin() || isSupervisor();
-      allow delete: if isAdmin();
-    }
-
-    // Training schedule  ← FIXED: 'training' (firebase-db.js ke hisaab se)
-    match /training/{courseId} {
-      allow read: if request.auth != null;
-      allow write: if isAdmin();
-    }
-
-    // Certificates collection
-    match /certificates/{certId} {
-      allow read: if request.auth != null;
-      allow create, update, delete: if isAdmin();
+    
+    match /otps/{userId} {
+      allow read, write: if isOwner(userId);
     }
   }
 }

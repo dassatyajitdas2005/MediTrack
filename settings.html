@@ -4,6 +4,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Theme FOUC Fix -->
+  <script>
+    (function () {
+      const savedTheme = localStorage.getItem('meditrack_theme') || 'light';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    })();
+  </script>
+
   <title>System Settings - MediTrack</title>
 
   <link rel="stylesheet" href="assets/css/style.css">
@@ -21,63 +30,86 @@
 
       <main class="page-content animate-fade-in">
         <div class="grid-2" id="settings-grid">
-          <!-- Active User Profile Card & Certificate Check -->
+          <!-- Active Profile & User Information -->
           <div class="glass-card" style="padding: 24px;">
-            <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 16px;"><i class="bx bx-user-circle"></i> Active
-              Session Profile</h3>
+            <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 20px; display:flex; align-items:center; gap:8px;">
+              <i class="bx bx-user-circle" style="color:var(--primary-500);"></i> Active Session Profile
+            </h3>
             <div id="settings-user-info">
-              <!-- Rendered via JS -->
+              <div style="text-align:center; padding:20px;">
+                <i class="bx bx-loader-alt bx-spin" style="font-size:32px; color:var(--primary-500);"></i>
+                <p style="margin-top:8px; color:var(--text-muted);">Loading profile...</p>
+              </div>
             </div>
 
             <div style="margin-top: 24px; padding-top: 20px; border-top: 1px dashed var(--border-color);">
-              <h4 style="font-size: 14px; font-weight: 800; margin-bottom: 8px;"><i class="bx bx-award"></i> Certificate
-                Clearance Status</h4>
-              <div id="settings-cert-status-area">
-                <!-- Rendered via JS -->
+              <h4 style="font-size: 14px; font-weight: 800; margin-bottom: 12px; display:flex; align-items:center; gap:8px;">
+                <i class="bx bx-slider-alt" style="color:var(--primary-500);"></i> Application Preferences
+              </h4>
+              <div style="display:flex; flex-direction:column; gap:12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:var(--bg-main); border-radius:var(--radius-md);">
+                  <div>
+                    <div style="font-weight:700; font-size:13px;">Toast Notifications</div>
+                    <div style="font-size:12px; color:var(--text-muted);">Show pop-up alerts for CRUD actions</div>
+                  </div>
+                  <input type="checkbox" id="pref-notifications" checked style="width:18px; height:18px; accent-color:var(--primary-500);">
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:var(--bg-main); border-radius:var(--radius-md);">
+                  <div>
+                    <div style="font-weight:700; font-size:13px;">Auto-Refresh Tables</div>
+                    <div style="font-size:12px; color:var(--text-muted);">Re-fetch Firestore data after save</div>
+                  </div>
+                  <input type="checkbox" id="pref-autorefresh" checked style="width:18px; height:18px; accent-color:var(--primary-500);">
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- Firebase Configuration & DB Controls -->
-          <div class="glass-card" style="padding: 24px;" id="admin-settings-panel">
-            <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 16px;"><i class="bx bx-cog"></i> Firebase &amp;
-              Storage Configuration</h3>
-            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
-              Enter your live Firebase credentials below to switch from standalone Local Demo mode to live Cloud
-              Firestore.
-            </p>
+          <!-- System Status & Appearance -->
+          <div class="glass-card" style="padding: 24px;">
+            <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 20px; display:flex; align-items:center; gap:8px;">
+              <i class="bx bx-palette" style="color:var(--primary-500);"></i> Theme & Appearance
+            </h3>
 
-            <form id="firebase-settings-form">
-              <div class="form-group">
-                <label class="form-label">Firebase API Key</label>
-                <input type="text" id="fb-apiKey" class="form-control" placeholder="AIzaSy...">
-              </div>
-              <div class="grid-2">
-                <div class="form-group">
-                  <label class="form-label">Auth Domain</label>
-                  <input type="text" id="fb-authDomain" class="form-control" placeholder="app.firebaseapp.com">
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Project ID</label>
-                  <input type="text" id="fb-projectId" class="form-control" placeholder="meditrack-app">
-                </div>
-              </div>
-
-              <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
-                <i class="bx bx-save"></i> Save Firebase Config
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:24px;">
+              <button type="button" id="theme-btn-light" class="btn btn-secondary" style="padding:14px; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:700;">
+                <i class="bx bx-sun" style="font-size:18px; color:var(--accent-amber);"></i> Light Mode
               </button>
-            </form>
-
-            <div
-              style="margin-top: 24px; padding-top: 20px; border-top: 1px dashed var(--border-color); display: flex; justify-content: space-between; align-items: center;">
-              <div>
-                <h4 style="font-size: 14px; font-weight: 800;">Reset Demo Seed Data</h4>
-                <p style="font-size: 12px; color: var(--text-muted);">Restore original interns, doctors, &amp; OPD
-                  schedules</p>
-              </div>
-              <button id="reset-db-btn" class="btn btn-danger btn-sm">
-                <i class="bx bx-refresh"></i> Reset Data
+              <button type="button" id="theme-btn-dark" class="btn btn-secondary" style="padding:14px; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:700;">
+                <i class="bx bx-moon" style="font-size:18px; color:var(--primary-500);"></i> Dark Mode
               </button>
+            </div>
+
+            <div style="padding-top: 20px; border-top: 1px dashed var(--border-color);">
+              <h4 style="font-size: 14px; font-weight: 800; margin-bottom: 16px; display:flex; align-items:center; gap:8px;">
+                <i class="bx bx-cloud-check" style="color:var(--accent-emerald);"></i> Cloud Database &amp; System Status
+              </h4>
+
+              <div style="display:flex; flex-direction:column; gap:10px; font-size:13px;">
+                <div style="display:flex; justify-content:space-between; padding:10px 14px; background:var(--bg-main); border-radius:var(--radius-md);">
+                  <span style="color:var(--text-muted);">Database Provider</span>
+                  <span style="font-weight:700; color:var(--primary-500);"><i class="bx bxl-firebase"></i> Google Cloud Firestore</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding:10px 14px; background:var(--bg-main); border-radius:var(--radius-md);">
+                  <span style="color:var(--text-muted);">Connection Status</span>
+                  <span class="status-pill active" style="font-size:11px;"><i class="bx bx-check-circle"></i> Connected &amp; Online</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding:10px 14px; background:var(--bg-main); border-radius:var(--radius-md);">
+                  <span style="color:var(--text-muted);">Database Mode</span>
+                  <span style="font-weight:700;">Production Live DB</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding:10px 14px; background:var(--bg-main); border-radius:var(--radius-md);">
+                  <span style="color:var(--text-muted);">Application Version</span>
+                  <span style="font-weight:700;">MediTrack v2.0.0</span>
+                </div>
+              </div>
+
+              <div style="margin-top:20px;">
+                <button type="button" id="settings-logout-btn" class="btn btn-danger" style="width:100%;">
+                  <i class="bx bx-log-out"></i> Logout Session
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -85,134 +117,7 @@
     </div>
   </div>
 
-  <script type="module">
-    import { auth } from './assets/js/auth.js';
-    import { db } from './assets/js/db.js';
-    import { renderLayout } from './assets/js/app.js';
-    import { openCertificateModal } from './assets/js/certificate.js';
-
-    document.addEventListener('DOMContentLoaded', () => {
-      renderLayout('settings');
-
-      const user = auth.getCurrentUser();
-      const isAdmin = auth.isAdmin();
-
-      // 🔥 Admin Check: Non-admin ko access denied dikhao
-      if (!isAdmin) {
-        document.getElementById('settings-grid').innerHTML = `
-          <div class="glass-card" style="padding: 60px 40px; text-align: center; grid-column: 1 / -1;">
-            <i class="bx bx-shield-quarter" style="font-size: 64px; color: var(--accent-rose);"></i>
-            <h2 style="margin-top: 20px; font-size: 24px;">Access Denied</h2>
-            <p style="color: var(--text-muted); margin-top: 8px;">Only System Administrators can access settings.</p>
-            <a href="dashboard.html" class="btn btn-primary" style="margin-top: 24px;">
-              <i class="bx bx-arrow-back"></i> Back to Dashboard
-            </a>
-          </div>
-        `;
-        return;
-      }
-
-      const userInfoDiv = document.getElementById('settings-user-info');
-      const certStatusArea = document.getElementById('settings-cert-status-area');
-
-      if (userInfoDiv && user) {
-        userInfoDiv.innerHTML = `
-          <div style="display:flex; align-items:center; gap:16px;">
-            <div style="width:56px; height:56px; border-radius:50%; background:linear-gradient(135deg, var(--primary-500), var(--secondary-500)); color:white; display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:800;">
-              ${escapeHtml(user.name ? user.name.charAt(0) : 'U')}
-            </div>
-            <div>
-              <h4 style="font-size:18px; font-weight:800;">${escapeHtml(user.name)}</h4>
-              <p style="font-size:13px; color:var(--text-muted);">${escapeHtml(user.email)}</p>
-              <span class="role-badge ${escapeHtml(user.role)}" style="margin-top:4px;">${escapeHtml(user.role)}</span>
-            </div>
-          </div>
-        `;
-      }
-
-      if (certStatusArea) {
-        const interns = db.getInterns();
-        let internObj = interns.find(i => i.email === user?.email) || interns[0];
-
-        if (internObj) {
-          const isIssued = internObj.certificateIssued;
-
-          certStatusArea.innerHTML = `
-            <div style="display:flex; align-items:center; justify-content:space-between; background:var(--bg-main); padding:16px; border-radius:var(--radius-md);">
-              <div>
-                <div style="font-weight:700;">${escapeHtml(internObj.name)} (${escapeHtml(internObj.internId)})</div>
-                <div style="font-size:12px; color:var(--text-muted);">${escapeHtml(internObj.course)}</div>
-              </div>
-              <div>
-                <span class="status-pill ${isIssued ? 'issued' : 'pending'}">
-                  ${isIssued ? 'Issued' : 'Pending Approval'}
-                </span>
-              </div>
-            </div>
-            ${isIssued ? `
-              <button id="view-my-cert-btn" class="btn btn-success" style="width:100%; margin-top:12px;">
-                <i class="bx bx-award"></i> View &amp; Download Printable Certificate
-              </button>
-            ` : `
-              <p style="font-size:12px; color:var(--text-muted); margin-top:8px; text-align:center;">
-                <i class="bx bx-info-circle"></i> Certificate clearance is pending Admin authorization.
-              </p>
-            `}
-          `;
-
-          document.getElementById('view-my-cert-btn')?.addEventListener('click', () => {
-            openCertificateModal(internObj.internId);
-          });
-        }
-      }
-
-      // Populate FB Config inputs
-      document.getElementById('fb-apiKey').value = localStorage.getItem('meditrack_fb_apiKey') || '';
-      document.getElementById('fb-authDomain').value = localStorage.getItem('meditrack_fb_authDomain') || '';
-      document.getElementById('fb-projectId').value = localStorage.getItem('meditrack_fb_projectId') || '';
-
-      // 🔥 Config Validation
-      document.getElementById('firebase-settings-form').addEventListener('submit', (e) => {
-        e.preventDefault();
-        const apiKey = document.getElementById('fb-apiKey').value.trim();
-        const authDomain = document.getElementById('fb-authDomain').value.trim();
-        const projectId = document.getElementById('fb-projectId').value.trim();
-
-        if (!apiKey.startsWith('AIza')) {
-          alert('Invalid API Key! It must start with "AIza"');
-          return;
-        }
-        if (!projectId) {
-          alert('Project ID is required!');
-          return;
-        }
-
-        localStorage.setItem('meditrack_fb_apiKey', apiKey);
-        localStorage.setItem('meditrack_fb_authDomain', authDomain);
-        localStorage.setItem('meditrack_fb_projectId', projectId);
-        alert('Firebase configuration saved successfully!');
-      });
-
-      // 🔥 Reset DB with confirmation
-      document.getElementById('reset-db-btn').addEventListener('click', () => {
-        const confirmText = prompt('⚠️ WARNING: This will erase all data!\n\nType RESET to confirm:');
-        if (confirmText === 'RESET') {
-          db.resetDatabase();
-          alert('Database reset successfully! Reloading...');
-          window.location.reload();
-        } else if (confirmText !== null) {
-          alert('Reset cancelled. You must type exactly "RESET" to confirm.');
-        }
-      });
-    });
-
-    function escapeHtml(text) {
-      if (!text) return "";
-      const div = document.createElement("div");
-      div.textContent = text;
-      return div.innerHTML;
-    }
-  </script>
+  <script type="module" src="assets/js/settings.js"></script>
 </body>
 
 </html>

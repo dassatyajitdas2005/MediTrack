@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        (function () {
+            const savedTheme = localStorage.getItem('meditrack_theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
+    <title>Verify OTP - MediTrack</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/theme.css">
+    <link rel="stylesheet" href="assets/css/components.css">
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0f172a, #1e293b, #0ea5e9);
+            padding: 20px;
+        }
+
+        .otp-box {
+            width: 100%;
+            max-width: 420px;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .otp-icon {
+            width: 72px;
+            height: 72px;
+            margin: 0 auto 20px;
+            background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 32px;
+        }
+
+        #otp-input {
+            width: 100%;
+            padding: 16px;
+            font-size: 28px;
+            letter-spacing: 12px;
+            text-align: center;
+            font-weight: 700;
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-md);
+            background: var(--bg-secondary);
+            color: var(--text-main);
+            outline: none;
+        }
+
+        #otp-input:focus {
+            border-color: var(--primary-500);
+        }
+
+        .timer {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 12px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="glass-card otp-box animate-fade-in">
+        <div class="otp-icon">
+            <i class="bx bx-shield-quarter"></i>
+        </div>
+        <h2 style="font-size: 22px; font-weight: 800; margin-bottom: 8px;">Enter OTP</h2>
+        <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 24px;">
+            We've sent a 6-digit code to your email.<br>
+            <strong id="user-email" style="color: var(--primary-500);">...</strong>
+        </p>
+
+        <input type="text" id="otp-input" maxlength="6" inputmode="numeric" pattern="[0-9]*" placeholder="------"
+            autocomplete="one-time-code">
+
+        <div id="otp-status" style="margin: 16px 0; font-size: 14px; min-height: 20px;"></div>
+
+        <button id="verify-btn" class="btn btn-primary" style="width: 100%; padding: 14px; font-size: 16px;">
+            <i class="bx bx-check-circle"></i> Verify OTP
+        </button>
+
+        <div class="timer">
+            Didn't receive?
+            <a href="#" id="resend-link" style="color: var(--primary-500); font-weight: 700;">Resend OTP</a>
+            <span id="countdown"></span>
+        </div>
+
+        <p style="margin-top: 20px; font-size: 13px;">
+            <a href="login.html" style="color: var(--text-muted);">← Back to Login</a>
+        </p>
+    </div>
+
+    <!-- EmailJS CDN -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
+    <script type="module">
+        import { auth } from "./assets/js/auth.js";
+
+        const otpInput = document.getElementById('otp-input');
+        const verifyBtn = document.getElementById('verify-btn');
+        const statusDiv = document.getElementById('otp-status');
+        const resendLink = document.getElementById('resend-link');
+        const countdownSpan = document.getElementById('countdown');
+        const userEmailSpan = document.getElementById('user-email');
+
+        let cooldown = 30;
+        let timer = null;
+
+        const user = auth.getCurrentUser();
+        if (!user) {
+            window.location.href = 'login.html';
+        } else {
+            userEmailSpan.innerText = user.email;
+        }
+
+        otpInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/\D/g, '').slice(0, 6);
+        });
+        otpInput.focus();
+
+        verifyBtn.addEventListener('click', async () => {
+            const code = otpInput.value.trim();
+            if (code.length !== 6) {
+                statusDiv.innerHTML = '<span style="color:var(--danger);">Please enter 6-digit OTP</span>';
+                return;
+            }
+
+            verifyBtn.disabled = true;
+            verifyBtn.innerHTML = '<i class="bx bx-loader bx-spin"></i> Verifying...';
+
+            try {
+                await auth.verifyOTP(code);
+                statusDiv.innerHTML = '<span style="color:var(--success);"><i class="bx bx-check"></i> Verified! Redirecting...</span>';
+                setTimeout(() => window.location.href = 'dashboard.html', 1000);
+            } catch (err) {
+                verifyBtn.disabled = false;
+                verifyBtn.innerHTML = '<i class="bx bx-check-circle"></i> Verify OTP';
+                statusDiv.innerHTML = `<span style="color:var(--danger);"><i class="bx bx-error"></i> ${err.message}</span>`;
+            }
+        });
+
+        otpInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') verifyBtn.click();
+        });
+
+        function startCooldown() {
+            resendLink.style.pointerEvents = 'none';
+            resendLink.style.opacity = '0.5';
+            countdownSpan.innerText = ` (${cooldown}s)`;
+
+            timer = setInterval(() => {
+                cooldown--;
+                countdownSpan.innerText = ` (${cooldown}s)`;
+                if (cooldown <= 0) {
+                    clearInterval(timer);
+                    resendLink.style.pointerEvents = 'auto';
+                    resendLink.style.opacity = '1';
+                    countdownSpan.innerText = '';
+                    cooldown = 30;
+                }
+            }, 1000);
+        }
+
+        resendLink.addEventListener('click', async (e) => {
+            e.preventDefault();
+            if (resendLink.style.pointerEvents === 'none') return;
+
+            statusDiv.innerHTML = '<span style="color:var(--text-muted);"><i class="bx bx-loader bx-spin"></i> Sending...</span>';
+
+            try {
+                const result = await auth.resendOTP();
+                statusDiv.innerHTML = '<span style="color:var(--success);"><i class="bx bx-check"></i> OTP sent! Check your email.</span>';
+
+                if (result.testMode) {
+                    console.log("TEST OTP:", result.otp);
+                    statusDiv.innerHTML += `<br><span style="color:var(--warning); font-size:12px;">(Test mode — check console)</span>`;
+                }
+
+                startCooldown();
+            } catch (err) {
+                statusDiv.innerHTML = `<span style="color:var(--danger);">${err.message}</span>`;
+            }
+        });
+
+        startCooldown();
+    </script>
+
+</body>
+
+</html>

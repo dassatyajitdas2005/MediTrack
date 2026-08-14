@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificate - MediTrack</title>
+
+    <script>
+        (function () {
+            const savedTheme = localStorage.getItem('meditrack_theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
+
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/theme.css">
+    <link rel="stylesheet" href="assets/css/components.css">
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+
+    <style>
+        /* ===== Modal Styles ===== */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(6px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal {
+            background: var(--bg-card, #1e293b);
+            border: 1px solid var(--border-color, #334155);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.active .modal {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-color, #334155);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-main, #f1f5f9);
+            margin: 0;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted, #94a3b8);
+            font-size: 24px;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: var(--bg-main, #0f172a);
+            color: var(--text-main, #f1f5f9);
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border-color, #334155);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        /* ===== Certificate Card ===== */
+        .certificate-card {
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.08), rgba(99, 102, 241, 0.08));
+            border: 2px solid var(--success, #22c55e);
+            border-radius: 20px;
+            padding: 48px 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .certificate-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(14, 165, 233, 0.05) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .cert-icon {
+            font-size: 72px;
+            color: var(--success, #22c55e);
+            margin-bottom: 16px;
+        }
+
+        .cert-title {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--success, #22c55e);
+            margin-bottom: 8px;
+        }
+
+        .cert-subtitle {
+            color: var(--text-muted, #94a3b8);
+            font-size: 15px;
+            margin-bottom: 32px;
+        }
+
+        .cert-details {
+            background: var(--bg-card, #1e293b);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: left;
+            margin-bottom: 32px;
+            border: 1px solid var(--border-color, #334155);
+        }
+
+        .cert-details-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-color, #334155);
+        }
+
+        .cert-details-row:last-child {
+            border-bottom: none;
+        }
+
+        .cert-label {
+            color: var(--text-muted, #94a3b8);
+            font-size: 13px;
+        }
+
+        .cert-value {
+            color: var(--text-main, #f1f5f9);
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        /* ===== Pending State ===== */
+        .pending-card {
+            border: 2px dashed var(--warning, #f59e0b);
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.05), rgba(245, 158, 11, 0.02));
+        }
+
+        .pending-icon {
+            color: var(--warning, #f59e0b);
+        }
+
+        .pending-title {
+            color: var(--warning, #f59e0b);
+        }
+
+        /* ===== Progress Bar ===== */
+        .progress-container {
+            margin-bottom: 8px;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            margin-bottom: 8px;
+            color: var(--text-muted, #94a3b8);
+        }
+
+        .progress-bar-bg {
+            height: 10px;
+            background: var(--bg-main, #0f172a);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #0ea5e9, #22d3ee);
+            border-radius: 5px;
+            transition: width 0.8s ease;
+        }
+
+        /* ===== Print Certificate ===== */
+        .print-certificate {
+            display: none;
+        }
+
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+
+            .print-certificate,
+            .print-certificate * {
+                visibility: visible;
+            }
+
+            .print-certificate {
+                display: block !important;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                background: white;
+                color: black;
+                padding: 40px;
+            }
+
+            .print-hide {
+                display: none !important;
+            }
+        }
+
+        /* ===== Admin Table ===== */
+        .cert-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .cert-issued {
+            background: rgba(34, 197, 94, 0.15);
+            color: #22c55e;
+        }
+
+        .cert-pending {
+            background: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+        }
+
+        .cert-not-eligible {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+
+        .btn-issue {
+            background: rgba(34, 197, 94, 0.15);
+            color: #22c55e;
+        }
+
+        .btn-issue:hover {
+            background: #22c55e;
+            color: white;
+        }
+
+        .btn-view {
+            background: rgba(14, 165, 233, 0.15);
+            color: #0ea5e9;
+        }
+
+        .btn-view:hover {
+            background: #0ea5e9;
+            color: white;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted, #94a3b8);
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .skeleton {
+            background: linear-gradient(90deg, var(--bg-main, #0f172a) 25%, var(--bg-card, #1e293b) 50%, var(--bg-main, #0f172a) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 6px;
+            height: 16px;
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: 200% 0;
+            }
+
+            100% {
+                background-position: -200% 0;
+            }
+        }
+
+        .toast {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            padding: 14px 20px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            z-index: 2000;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.4s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast-success {
+            background: #22c55e;
+        }
+
+        .toast-error {
+            background: #ef4444;
+        }
+
+        .toast-info {
+            background: #0ea5e9;
+        }
+
+        .search-box {
+            position: relative;
+            flex: 1;
+        }
+
+        .search-box .search-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted, #94a3b8);
+            font-size: 18px;
+        }
+
+        .search-box input {
+            padding-left: 42px !important;
+            width: 100%;
+        }
+
+        .page-header {
+            margin-bottom: 24px;
+        }
+
+        .page-header h2 {
+            font-size: 24px;
+            font-weight: 800;
+        }
+
+        .page-header p {
+            color: var(--text-muted, #94a3b8);
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <div id="sidebar-container"></div>
+
+        <div class="main-wrapper">
+            <div id="navbar-container"></div>
+
+            <main class="page-content animate-fade-in">
+            <div class="page-header">
+                <h2 id="page-title">My Certificate</h2>
+                <p id="page-subtitle">View and download your completion certificate.</p>
+            </div>
+
+            <div id="certificate-container">
+                <!-- Loading State -->
+                <div class="glass-card" style="padding: 60px; text-align: center;">
+                    <div class="skeleton" style="width: 64px; height: 64px; border-radius: 50%; margin: 0 auto 20px;">
+                    </div>
+                    <div class="skeleton" style="width: 200px; height: 20px; margin: 0 auto 12px;"></div>
+                    <div class="skeleton" style="width: 280px; height: 14px; margin: 0 auto;"></div>
+                </div>
+            </div>
+
+            <!-- Admin: All Certificates Table -->
+            <div id="admin-section" style="display: none; margin-top: 24px;">
+                <div class="glass-card"
+                    style="padding: 20px; margin-bottom: 24px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px;">
+                    <div style="display: flex; gap: 16px; flex: 1; min-width: 280px; align-items: center;">
+                        <div class="search-box">
+                            <i class="bx bx-search search-icon"></i>
+                            <input type="text" id="cert-search-input" class="form-control"
+                                placeholder="Search by name, ID, or college...">
+                        </div>
+                        <select id="cert-status-filter" class="form-control" style="width: 180px;">
+                            <option value="">All Status</option>
+                            <option value="issued">Issued</option>
+                            <option value="pending">Pending</option>
+                            <option value="not-eligible">Not Eligible</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="glass-card" style="padding: 24px;">
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Intern ID</th>
+                                    <th>Student Name</th>
+                                    <th>Course</th>
+                                    <th>Department</th>
+                                    <th>Progress</th>
+                                    <th>Attendance</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cert-tbody">
+                                <tr>
+                                    <td>
+                                        <div class="skeleton" style="width: 60px;"></div>
+                                    </td>
+                                    <td>
+                                        <div class="skeleton" style="width: 120px;"></div>
+                                    </td>
+                                    <td>
+                                        <div class="skeleton" style="width: 100px;"></div>
+                                    </td>
+                                    <td>
+                                        <div class="skeleton" style="width: 100px;"></div>
+                                    </td>
+                                    <td>
+                                        <div class="skeleton" style="width: 80px;"></div>
+                                    </td>
+                                    <td>
+                                        <div class="skeleton" style="width: 50px;"></div>
+                                    </td>
+                                    <td>
+                                        <div class="skeleton" style="width: 70px;"></div>
+                                    </td>
+                                    <td>
+                                        <div class="skeleton" style="width: 80px;"></div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div id="admin-empty-state" class="empty-state" style="display: none;">
+                            <i class="bx bx-user-x"></i>
+                            <h3>No records found</h3>
+                            <p>No intern records match your search.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+    <div id="toast" class="toast"></div>
+
+    <script type="module" src="assets/js/certificate.js"></script>
+</body>
+
+</html>
