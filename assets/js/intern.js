@@ -158,7 +158,7 @@ async function loadInterns() {
       "Failed to load intern records.",
       "error"
     );
-  } show
+  }
 }
 
 
