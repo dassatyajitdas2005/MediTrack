@@ -7,54 +7,72 @@ import { theme } from './theme.js';
  * Get sidebar items based on user role
  */
 function getSidebarItems(role) {
-  const common = [
-    { id: 'dashboard', icon: 'bx-grid-alt', label: 'Dashboard', href: 'dashboard.html' },
-  ];
+  const normalizedRole = (role || '').toString().trim().toLowerCase();
 
-  const studentItems = [
-    { id: 'training', icon: 'bx-trending-up', label: 'Training Progress', href: 'training.html' },
-    { id: 'schedule', icon: 'bx-time-five', label: 'Daily Schedule', href: 'schedule.html' },
-    { id: 'certificate', icon: 'bx-certification', label: 'Certificate', href: 'certificate.html' },
-  ];
-
-  const adminItems = [
-    { id: 'intern', icon: 'bx-group', label: 'Intern Management', href: 'intern.html' },
-    { id: 'user', icon: 'bx-user-circle', label: 'User Management', href: 'user.html' },
-    { id: 'doctor', icon: 'bx-user-voice', label: 'Doctor OPD Schedule', href: 'doctor.html' },
-    { id: 'attendance', icon: 'bx-calendar-check', label: 'Attendance Module', href: 'attendance.html' },
-  ];
-
+  const dashboardItem = { id: 'dashboard', icon: 'bx-grid-alt', label: 'Dashboard', href: 'dashboard.html' };
+  const internItem = { id: 'intern', icon: 'bx-group', label: 'Intern Management', href: 'intern.html' };
+  const userItem = { id: 'user', icon: 'bx-user-circle', label: 'User Management', href: 'user.html' };
+  const doctorItem = { id: 'doctor', icon: 'bx-user-voice', label: 'Doctor OPD Schedule', href: 'doctor.html' };
+  const attendanceItem = { id: 'attendance', icon: 'bx-calendar-check', label: 'Attendance Module', href: 'attendance.html' };
+  const trainingItem = { id: 'training', icon: 'bx-trending-up', label: 'Training Progress', href: 'training.html' };
+  const scheduleItem = { id: 'schedule', icon: 'bx-time-five', label: 'Daily Schedule', href: 'schedule.html' };
+  const certificateItem = { id: 'certificate', icon: 'bx-certification', label: 'Certificate', href: 'certificate.html' };
+  const reportItem = { id: 'report', icon: 'bx-bar-chart-alt-2', label: 'Reports & Summary', href: 'report.html' };
   const settingsItem = { id: 'settings', icon: 'bx-cog', label: 'Settings & Config', href: 'settings.html' };
 
-  const adminSystemItems = [
-    { id: 'report', icon: 'bx-bar-chart-alt-2', label: 'Reports & Summary', href: 'report.html' },
-    settingsItem
-  ];
-
-  if (role === 'student') {
-    return [...common, ...studentItems, settingsItem];
-  }
-
-  if (role === 'admin') {
-    return [...common, ...adminItems, ...studentItems, ...adminSystemItems];
-  }
-
-  if (role === 'supervisor') {
+  if (normalizedRole === 'admin') {
     return [
-      ...common,
-      { id: 'attendance', icon: 'bx-calendar-check', label: 'Attendance Module', href: 'attendance.html' },
-      ...studentItems,
-      { id: 'report', icon: 'bx-bar-chart-alt-2', label: 'Reports & Summary', href: 'report.html' },
+      dashboardItem,
+      internItem,
+      userItem,
+      doctorItem,
+      attendanceItem,
+      trainingItem,
+      scheduleItem,
+      certificateItem,
+      reportItem,
       settingsItem
     ];
   }
 
-  return [...common, settingsItem];
+  if (normalizedRole === 'student') {
+    return [
+      dashboardItem,
+      attendanceItem,
+      trainingItem,
+      scheduleItem,
+      certificateItem,
+      settingsItem
+    ];
+  }
+
+  if (normalizedRole === 'supervisor') {
+    return [
+      dashboardItem,
+      internItem,
+      attendanceItem,
+      trainingItem,
+      scheduleItem,
+      certificateItem,
+      reportItem,
+      settingsItem
+    ];
+  }
+
+  // Safe fallback for authenticated users
+  return [
+    dashboardItem,
+    attendanceItem,
+    trainingItem,
+    scheduleItem,
+    certificateItem,
+    settingsItem
+  ];
 }
 
 export function renderLayout(activePage = 'dashboard') {
   const user = auth.getCurrentUser() || { name: "Guest User", role: "student", email: "guest@meditrack.com" };
-  const role = user.role || 'student';
+  const role = (user.role || 'student').toString().trim().toLowerCase();
 
   const navItems = getSidebarItems(role);
 

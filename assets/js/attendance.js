@@ -4,8 +4,10 @@ import { auth } from './auth.js';
 import { renderLayout } from './app.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
-  renderLayout('attendance');
   await auth.init();
+  const isAllowed = await auth.checkAuth(['admin', 'student', 'supervisor']);
+  if (!isAllowed) return;
+  renderLayout('attendance');
   initAttendanceModule();
 });
 

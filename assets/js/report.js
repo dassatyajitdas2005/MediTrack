@@ -6,7 +6,8 @@ import { renderLayout } from './app.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   await auth.init();
-  auth.checkAuth(['admin', 'supervisor']);
+  const isAllowed = await auth.checkAuth(['admin', 'supervisor']);
+  if (!isAllowed) return;
   renderLayout('report');
   initReports();
 });

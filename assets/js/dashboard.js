@@ -6,11 +6,10 @@ import { renderLayout } from './app.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   await auth.init();
+  const isAllowed = await auth.checkAuth(['admin', 'student', 'supervisor']);
+  if (!isAllowed) return;
   const user = auth.getCurrentUser();
-  if (!user) {
-    window.location.replace('login.html');
-    return;
-  }
+  if (!user) return;
 
   renderLayout('dashboard');
   loadDashboardData(user);

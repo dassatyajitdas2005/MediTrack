@@ -17,8 +17,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     // 1. Initialize authentication
     await auth.init();
 
-    // 2. Allow only admin and student
-    if (!auth.checkAuth(["admin", "student"])) {
+    // 2. Allow only admin and supervisor
+    const isAllowed = await auth.checkAuth(["admin", "supervisor"]);
+    if (!isAllowed) {
       return;
     }
 

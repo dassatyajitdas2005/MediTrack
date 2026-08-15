@@ -173,12 +173,16 @@ class AuthService {
 
   isAdmin() {
     const user = readCache();
-    return user ? user.role === 'admin' : false;
+    if (!user || !user.role) return false;
+    const role = user.role.toString().trim().toLowerCase();
+    return role === 'admin' || role === 'supervisor';
   }
 
   isStudent() {
     const user = readCache();
-    return user ? user.role === 'student' : false;
+    if (!user || !user.role) return false;
+    const role = user.role.toString().trim().toLowerCase();
+    return role === 'student';
   }
 
   /* ========== LOGIN ========== */
@@ -336,9 +340,12 @@ class AuthService {
       return false;
     }
 
-    // 🔥 ROLE CHECK (FIXED)
-    if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
-      showToast("Access Denied"); // alert hata diya
+    // 🔥 ROLE CHECK (CASE-INSENSITIVE)
+    const userRole = (user.role || '').toString().trim().toLowerCase();
+    const normalizedAllowed = allowedRoles.map(r => r.toString().trim().toLowerCase());
+
+    if (allowedRoles.length > 0 && !normalizedAllowed.includes(userRole)) {
+      showToast("Access Denied");
       window.location.replace("dashboard.html");
       return false;
     }

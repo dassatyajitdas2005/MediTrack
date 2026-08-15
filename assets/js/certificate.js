@@ -8,6 +8,8 @@ let allInterns = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
   await auth.init();
+  const isAllowed = await auth.checkAuth(['admin', 'student', 'supervisor']);
+  if (!isAllowed) return;
   renderLayout('certificate');
   initCertificateModule();
 });

@@ -6,8 +6,8 @@ import { renderLayout } from './app.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   await auth.init();
-  // 🔥 FIX: Students can also view schedule
-  auth.checkAuth(['student', 'admin', 'supervisor']);
+  const isAllowed = await auth.checkAuth(['admin', 'student', 'supervisor']);
+  if (!isAllowed) return;
   renderLayout('schedule');
   loadSchedule();
 });
