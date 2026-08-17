@@ -1,6 +1,7 @@
 /* MediTrack - Firestore Database Module */
 
 import { db } from "./firebase-config.js";
+import { auth as firebaseAuth } from "./firebase-config.js";
 import {
   collection,
   doc,
@@ -11,7 +12,8 @@ import {
   deleteDoc,
   query,
   where,
-  orderBy
+  orderBy,
+  serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
 // ==========================================
@@ -264,23 +266,17 @@ export async function getAttendance() {
 
 export async function markAttendance(attendanceData) {
   try {
-    const docId = attendanceData.id || (attendanceData.internId && attendanceData.date ? `att_${attendanceData.internId}_${attendanceData.date}` : "att_" + Date.now());
-    const payload = { ...attendanceData, id: docId, timestamp: new Date().toISOString() };
-    await setDoc(doc(db, "attendance", docId), payload, { merge: true });
+    const currentUser = firebaseAuth.currentUser;
+    const markedBy = currentUser ? currentUser.uid : 'unknown';
 
-    // Automatically update attendance percentage for intern
-    if (attendanceData.internId) {
-      const allAtt = await getAttendance();
-      const internAtt = allAtt.filter(a => a.internId === attendanceData.internId);
-      if (internAtt.length > 0) {
-        const presentCount = internAtt.filter(a => a.status === 'Present').length;
-        const percentage = Math.round((presentCount / internAtt.length) * 100);
-        await updateIntern(attendanceData.internId, {
-          completedDays: internAtt.length,
-          attendancePercentage: percentage
-        });
-      }
-    }
+    const docId = attendanceData.id || (attendanceData.internId && attendanceData.date ? `att_${attendanceData.internId}_${attendanceData.date}` : "att_" + Date.now());
+    const payload = {
+      ...attendanceData,
+      id: docId,
+      markedBy,
+      markedAt: serverTimestamp()
+    };
+    await setDoc(doc(db, "attendance", docId), payload, { merge: true });
 
     return payload;
   } catch (error) {

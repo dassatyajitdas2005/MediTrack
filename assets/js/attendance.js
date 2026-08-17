@@ -16,14 +16,14 @@ function initAttendanceModule() {
   const isStudent = auth.isStudent();
   const user = auth.getCurrentUser();
 
-  // Set default date picker to today
   const datePicker = document.getElementById('attendance-date-picker');
   if (datePicker) {
-    datePicker.value = new Date().toISOString().split('T')[0];
+    const today = new Date().toISOString().split('T')[0];
+    datePicker.value = today;
+    datePicker.max = today;
     datePicker.addEventListener('change', () => loadAttendanceData());
   }
 
-  // Admin save button vs Student notification
   const saveBtn = document.getElementById('save-attendance-btn');
   const adminNotice = document.getElementById('admin-notice');
   const studentNotice = document.getElementById('student-notice');
@@ -33,6 +33,7 @@ function initAttendanceModule() {
     if (adminNotice) adminNotice.style.display = 'none';
     if (studentNotice) studentNotice.style.display = 'block';
   } else if (isAdmin) {
+    if (saveBtn) saveBtn.style.display = 'inline-flex';
     if (adminNotice) adminNotice.style.display = 'inline-flex';
     if (studentNotice) studentNotice.style.display = 'none';
   }
@@ -51,8 +52,10 @@ async function loadAttendanceData() {
   const tbody = document.getElementById('attendance-tbody');
 
   try {
-    const interns = await fbDb.getInterns();
-    const attendanceList = await fbDb.getAttendance();
+    const [interns, attendanceList] = await Promise.all([
+      fbDb.getInterns(),
+      fbDb.getAttendance()
+    ]);
 
     const isAdmin = auth.isAdmin();
     const isStudent = auth.isStudent();
@@ -60,10 +63,9 @@ async function loadAttendanceData() {
 
     if (!tbody) return;
 
-    // Filter for Student role
-    let displayInterns = interns;
+    let displayInterns = interns.filter(intern => intern.status !== 'completed');
     if (isStudent && user) {
-      displayInterns = interns.filter(i => i.email && i.email.toLowerCase() === user.email.toLowerCase());
+      displayInterns = displayInterns.filter(i => i.email && i.email.toLowerCase() === user.email.toLowerCase());
     }
 
     if (displayInterns.length === 0) {
@@ -75,15 +77,24 @@ async function loadAttendanceData() {
 
     if (emptyState) emptyState.style.display = 'none';
 
+    const attendanceMap = new Map();
+    attendanceList.forEach(a => {
+      if (a.date === dateStr) {
+        attendanceMap.set(a.internId, a);
+      }
+    });
+
+    const allAttendanceForInterns = attendanceList.filter(a => displayInterns.some(i => i.internId === a.internId));
+
     tbody.innerHTML = displayInterns.map(intern => {
-      // Find record for selected date
-      const record = attendanceList.find(a => a.internId === intern.internId && a.date === dateStr);
-      const currentStatus = record ? record.status : 'Present';
+      const record = attendanceMap.get(intern.internId);
+      const currentStatus = record ? record.status : 'Not Marked';
       const remarks = record ? (record.remarks || '') : '';
+      const attendancePercent = calculateAttendancePercentage(intern.internId, allAttendanceForInterns, dateStr);
 
       return `
         <tr>
-          <td><strong>${intern.internId}</strong></td>
+          <td><strong>${escapeHtml(intern.internId)}</strong></td>
           <td>
             <div style="font-weight: 700;">${escapeHtml(intern.name)}</div>
             <div style="font-size: 12px; color: var(--text-muted);">${escapeHtml(intern.college)}</div>
@@ -91,7 +102,8 @@ async function loadAttendanceData() {
           <td>${escapeHtml(intern.department)}</td>
           <td>
             ${isAdmin ? `
-              <select class="attendance-select attendance-status-select" data-intern-id="${intern.internId}" style="width: 140px; font-weight: 700;">
+              <select class="attendance-select attendance-status-select ${currentStatus === 'Not Marked' ? 'not-marked' : ''}" data-intern-id="${intern.internId}" style="width: 140px; font-weight: 700;">
+                <option value="Not Marked" ${currentStatus === 'Not Marked' ? 'selected' : ''}>Not Marked</option>
                 <option value="Present" ${currentStatus === 'Present' ? 'selected' : ''}>Present</option>
                 <option value="Absent" ${currentStatus === 'Absent' ? 'selected' : ''}>Absent</option>
                 <option value="Leave" ${currentStatus === 'Leave' ? 'selected' : ''}>Leave</option>
@@ -105,18 +117,29 @@ async function loadAttendanceData() {
             ${isAdmin ? `
               <input type="text" class="remarks-input attendance-remarks-input" data-intern-id="${intern.internId}" value="${escapeHtml(remarks)}" placeholder="e.g. Ward duty shift">
             ` : `
-              <span>${escapeHtml(remarks || 'Regular daily shift')}</span>
+              <span>${escapeHtml(remarks || '—')}</span>
             `}
           </td>
           <td>
-            <strong>${intern.attendancePercentage || 0}%</strong>
+            <strong>${attendancePercent}%</strong>
           </td>
         </tr>
       `;
     }).join('');
 
-    // Update stats bar
-    updateStatsBar(displayInterns, attendanceList, dateStr);
+    if (isAdmin) {
+      document.querySelectorAll('.attendance-status-select').forEach(select => {
+        select.addEventListener('change', function() {
+          if (this.value === 'Not Marked') {
+            this.classList.add('not-marked');
+          } else {
+            this.classList.remove('not-marked');
+          }
+        });
+      });
+    }
+
+    updateStatsBar(displayInterns, attendanceMap);
 
     if (statsBar) statsBar.style.display = 'flex';
 
@@ -130,26 +153,46 @@ async function loadAttendanceData() {
   }
 }
 
-function updateStatsBar(interns, attendanceList, dateStr) {
+function calculateAttendancePercentage(internId, allAttendance, selectedDate) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const selected = new Date(selectedDate + 'T00:00:00');
+
+  const pastRecords = allAttendance.filter(a => {
+    const recordDate = new Date(a.date + 'T00:00:00');
+    return recordDate <= today;
+  });
+
+  if (pastRecords.length === 0) return 0;
+
+  const presentCount = pastRecords.filter(a => a.status === 'Present').length;
+  return Math.round((presentCount / pastRecords.length) * 100);
+}
+
+function updateStatsBar(interns, attendanceMap) {
   const statPresent = document.getElementById('stat-present');
   const statAbsent = document.getElementById('stat-absent');
   const statLeave = document.getElementById('stat-leave');
   const statHalf = document.getElementById('stat-half');
+  const statNotMarked = document.getElementById('stat-not-marked');
   const statTotal = document.getElementById('stat-total');
 
   if (!statPresent) return;
 
-  let present = 0, absent = 0, leave = 0, half = 0;
+  let present = 0, absent = 0, leave = 0, half = 0, notMarked = 0;
 
   interns.forEach(intern => {
-    const record = attendanceList.find(a => a.internId === intern.internId && a.date === dateStr);
+    const record = attendanceMap.get(intern.internId);
     if (record) {
       switch (record.status) {
         case 'Present': present++; break;
         case 'Absent': absent++; break;
         case 'Leave': leave++; break;
         case 'Half Day': half++; break;
+        case 'Not Marked': notMarked++; break;
       }
+    } else {
+      notMarked++;
     }
   });
 
@@ -157,6 +200,7 @@ function updateStatsBar(interns, attendanceList, dateStr) {
   statAbsent.textContent = absent;
   statLeave.textContent = leave;
   statHalf.textContent = half;
+  statNotMarked.textContent = notMarked;
   statTotal.textContent = interns.length;
 }
 
@@ -191,6 +235,12 @@ async function handleSaveBatchAttendance() {
     return;
   }
 
+  const today = new Date().toISOString().split('T')[0];
+  if (dateStr > today) {
+    showToast('Cannot save attendance for future dates', 'error');
+    return;
+  }
+
   if (saveBtn) {
     saveBtn.disabled = true;
     saveBtn.innerHTML = '<i class="bx bx-loader bx-spin"></i> Saving...';
@@ -204,7 +254,11 @@ async function handleSaveBatchAttendance() {
       const internId = select.getAttribute('data-intern-id');
       const status = select.value;
       const remarksInput = Array.from(remarksInputs).find(input => input.getAttribute('data-intern-id') === internId);
-      const remarks = remarksInput ? remarksInput.value : '';
+      const remarks = remarksInput ? remarksInput.value.trim() : '';
+
+      if (status === 'Not Marked') {
+        continue;
+      }
 
       await fbDb.markAttendance({
         internId,
@@ -221,7 +275,7 @@ async function handleSaveBatchAttendance() {
 
   if (saveBtn) {
     saveBtn.disabled = false;
-    saveBtn.innerHTML = '<i class="bx bx-check-double"></i> Save Attendance Batch';
+    saveBtn.innerHTML = '<i class="bx bx-check-double"></i> Save Attendance';
   }
 
   if (success) {
