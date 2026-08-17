@@ -1,11 +1,14 @@
 /* MediTrack - Auth with Email OTP (EmailJS + Firebase) */
 
-import { auth as firebaseAuth, db } from "./firebase-config.js";
+import { auth as firebaseAuth, db, googleProvider } from "./firebase-config.js";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
-  onAuthStateChanged
+  onAuthStateChanged,
+  signInWithPopup,
+  fetchSignInMethodsForEmail,
+  linkWithPopup
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 import {
   doc,
@@ -246,6 +249,99 @@ class AuthService {
 
     const result = await this._createAndSendOTP(firebaseUser.uid, firebaseUser.email, profile.name);
     return { uid: firebaseUser.uid, ...result, message: "OTP sent to your email!" };
+  }
+
+  /* ========== GOOGLE SIGN-IN ========== */
+  async signInWithGoogle() {
+    try {
+      // First, check if this email already exists with password auth
+      // We do this by trying to fetch sign-in methods for the email
+      // But since we need the email first, we'll do a popup and handle conflicts
+
+      let cred;
+      let firebaseUser;
+      let isNewUser = false;
+
+      try {
+        cred = await signInWithPopup(firebaseAuth, googleProvider);
+        firebaseUser = cred.user;
+      } catch (popupError) {
+        if (popupError.code === 'auth/popup-closed-by-user') {
+          throw new Error("Sign-in cancelled. Please try again.");
+        }
+        if (popupError.code === 'auth/popup-blocked') {
+          throw new Error("Popup blocked. Please allow popups for this site and try again.");
+        }
+        if (popupError.code === 'auth/network-request-failed') {
+          throw new Error("Network error. Please check your connection and try again.");
+        }
+        if (popupError.code === 'auth/account-exists-with-different-credential') {
+          // Email exists with different provider (e.g., password)
+          // We need to link the Google credential to the existing account
+          const email = popupError.customData?.email || popupError.email;
+          throw new Error(`An account with ${email} already exists. Please sign in with your password, or contact support to link accounts.`);
+        }
+        throw popupError;
+      }
+
+      const uid = firebaseUser.uid;
+      const email = firebaseUser.email;
+
+      // Check if user document exists in Firestore
+      const userDocRef = doc(db, "users", uid);
+      const userDocSnap = await getDoc(userDocRef);
+
+      let userData;
+
+      if (userDocSnap.exists()) {
+        // Existing user - PRESERVE all existing data including role
+        userData = userDocSnap.data();
+        // Ensure emailVerified is true for Google users
+        if (userData.emailVerified !== true) {
+          await updateDoc(userDocRef, { emailVerified: true });
+          userData.emailVerified = true;
+        }
+        // Optionally update name/photo if changed
+        const updates = {};
+        if (firebaseUser.displayName && firebaseUser.displayName !== userData.name) {
+          updates.name = firebaseUser.displayName;
+        }
+        if (firebaseUser.photoURL && firebaseUser.photoURL !== userData.photoURL) {
+          updates.photoURL = firebaseUser.photoURL;
+        }
+        if (Object.keys(updates).length > 0) {
+          await updateDoc(userDocRef, updates);
+          userData = { ...userData, ...updates };
+        }
+      } else {
+        // Brand new Google user - create with default student role
+        isNewUser = true;
+        userData = {
+          uid,
+          email,
+          name: firebaseUser.displayName || email.split("@")[0],
+          role: "student",
+          department: "Pharmacy",
+          status: "active",
+          emailVerified: true,
+          photoURL: firebaseUser.photoURL || null,
+          createdAt: serverTimestamp()
+        };
+        await setDoc(userDocRef, userData);
+      }
+
+      // Convert serverTimestamp to ISO string for localStorage
+      const cacheData = {
+        ...userData,
+        createdAt: userData.createdAt?.toDate?.()?.toISOString() || new Date().toISOString()
+      };
+      saveCache(cacheData);
+
+      return { userData: cacheData, needsVerification: false, isNewUser };
+    } catch (error) {
+      console.error("[AuthService] Google Sign-In Error:", error.code, error.message);
+      throw error;
+    }
   }
 
   /* ========== OTP INTERNAL ========== */
