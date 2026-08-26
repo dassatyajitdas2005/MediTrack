@@ -1,20 +1,23 @@
-import * as fbDb from './firebase-db.js';
+/* MediTrack - Attendance Module Controller (Single Source of Truth) */
 
+import * as fbDb from './firebase-db.js';
 import { auth } from './auth.js';
 import { renderLayout } from './app.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
-  await auth.init();
-  const isAllowed = await auth.checkAuth(['admin', 'student', 'supervisor']);
-  if (!isAllowed) return;
-  renderLayout('attendance');
-  initAttendanceModule();
+  try {
+    await auth.init();
+    const isAllowed = await auth.checkAuth(['admin', 'student', 'supervisor']);
+    if (!isAllowed) return;
+    renderLayout('attendance');
+    initAttendanceModule();
+  } catch (error) {
+    console.error('[Attendance] Init error:', error);
+  }
 });
 
 function initAttendanceModule() {
   const isAdmin = auth.isAdmin();
-  const isStudent = auth.isStudent();
-  const user = auth.getCurrentUser();
 
   const datePicker = document.getElementById('attendance-date-picker');
   if (datePicker) {
@@ -25,17 +28,11 @@ function initAttendanceModule() {
   }
 
   const saveBtn = document.getElementById('save-attendance-btn');
-  const adminNotice = document.getElementById('admin-notice');
-  const studentNotice = document.getElementById('student-notice');
 
   if (!isAdmin && saveBtn) {
     saveBtn.style.display = 'none';
-    if (adminNotice) adminNotice.style.display = 'none';
-    if (studentNotice) studentNotice.style.display = 'block';
   } else if (isAdmin) {
     if (saveBtn) saveBtn.style.display = 'inline-flex';
-    if (adminNotice) adminNotice.style.display = 'inline-flex';
-    if (studentNotice) studentNotice.style.display = 'none';
   }
 
   loadAttendanceData();
@@ -45,163 +42,188 @@ function initAttendanceModule() {
   }
 }
 
-async function loadAttendanceData() {
-  const dateStr = document.getElementById('attendance-date-picker').value;
+async function loadAttendanceData(forceRefresh = false) {
+  const datePicker = document.getElementById('attendance-date-picker');
+  const dateStr = datePicker ? datePicker.value : new Date().toISOString().split('T')[0];
   const statsBar = document.getElementById('stats-bar');
   const emptyState = document.getElementById('empty-state');
   const tbody = document.getElementById('attendance-tbody');
 
   try {
+    let currentInterns = [];
+    let currentAttendance = [];
+
+    const handleBgSync = () => {
+      renderAttendanceView(currentInterns, currentAttendance, dateStr);
+    };
+
     const [interns, attendanceList] = await Promise.all([
-      fbDb.getInterns(),
-      fbDb.getAttendance()
+      fbDb.getEnrolledInterns({
+        forceRefresh,
+        onBackgroundUpdate: (fresh) => {
+          currentInterns = fresh || [];
+          handleBgSync();
+        }
+      }),
+      fbDb.getAttendance({
+        forceRefresh,
+        onBackgroundUpdate: (fresh) => {
+          currentAttendance = fresh || [];
+          handleBgSync();
+        }
+      })
     ]);
 
-    const isAdmin = auth.isAdmin();
-    const isStudent = auth.isStudent();
-    const user = auth.getCurrentUser();
-
-    if (!tbody) return;
-
-    let displayInterns = interns.filter(intern => intern.status !== 'completed');
-    if (isStudent && user) {
-      displayInterns = displayInterns.filter(i => i.email && i.email.toLowerCase() === user.email.toLowerCase());
-    }
-
-    if (displayInterns.length === 0) {
-      tbody.innerHTML = '';
-      if (emptyState) emptyState.style.display = 'block';
-      if (statsBar) statsBar.style.display = 'none';
-      return;
-    }
-
-    if (emptyState) emptyState.style.display = 'none';
-
-    const attendanceMap = new Map();
-    attendanceList.forEach(a => {
-      if (a.date === dateStr) {
-        attendanceMap.set(a.internId, a);
-      }
-    });
-
-    const allAttendanceForInterns = attendanceList.filter(a => displayInterns.some(i => i.internId === a.internId));
-
-    tbody.innerHTML = displayInterns.map(intern => {
-      const record = attendanceMap.get(intern.internId);
-      const currentStatus = record ? record.status : 'Not Marked';
-      const remarks = record ? (record.remarks || '') : '';
-      const attendancePercent = calculateAttendancePercentage(intern.internId, allAttendanceForInterns, dateStr);
-
-      return `
-        <tr>
-          <td><strong>${escapeHtml(intern.internId)}</strong></td>
-          <td>
-            <div style="font-weight: 700;">${escapeHtml(intern.name)}</div>
-            <div style="font-size: 12px; color: var(--text-muted);">${escapeHtml(intern.college)}</div>
-          </td>
-          <td>${escapeHtml(intern.department)}</td>
-          <td>
-            ${isAdmin ? `
-              <select class="attendance-select attendance-status-select ${currentStatus === 'Not Marked' ? 'not-marked' : ''}" data-intern-id="${intern.internId}" style="width: 140px; font-weight: 700;">
-                <option value="Not Marked" ${currentStatus === 'Not Marked' ? 'selected' : ''}>Not Marked</option>
-                <option value="Present" ${currentStatus === 'Present' ? 'selected' : ''}>Present</option>
-                <option value="Absent" ${currentStatus === 'Absent' ? 'selected' : ''}>Absent</option>
-                <option value="Leave" ${currentStatus === 'Leave' ? 'selected' : ''}>Leave</option>
-                <option value="Half Day" ${currentStatus === 'Half Day' ? 'selected' : ''}>Half Day</option>
-              </select>
-            ` : `
-              <span class="status-badge status-${currentStatus.toLowerCase().replace(' ', '-')}">${escapeHtml(currentStatus)}</span>
-            `}
-          </td>
-          <td>
-            ${isAdmin ? `
-              <input type="text" class="remarks-input attendance-remarks-input" data-intern-id="${intern.internId}" value="${escapeHtml(remarks)}" placeholder="e.g. Ward duty shift">
-            ` : `
-              <span>${escapeHtml(remarks || '—')}</span>
-            `}
-          </td>
-          <td>
-            <strong>${attendancePercent}%</strong>
-          </td>
-        </tr>
-      `;
-    }).join('');
-
-    if (isAdmin) {
-      document.querySelectorAll('.attendance-status-select').forEach(select => {
-        select.addEventListener('change', function() {
-          if (this.value === 'Not Marked') {
-            this.classList.add('not-marked');
-          } else {
-            this.classList.remove('not-marked');
-          }
-        });
-      });
-    }
-
-    updateStatsBar(displayInterns, attendanceMap);
-
-    if (statsBar) statsBar.style.display = 'flex';
-
+    currentInterns = interns || [];
+    currentAttendance = attendanceList || [];
+    renderAttendanceView(currentInterns, currentAttendance, dateStr);
   } catch (error) {
     console.error('[Attendance] Error loading data:', error);
     if (tbody) {
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 24px; color: var(--danger);">Failed to load attendance: ${error.message}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 24px; color: var(--accent-rose);">Failed to load attendance: ${escapeHtml(error.message)}</td></tr>`;
     }
     if (emptyState) emptyState.style.display = 'none';
     if (statsBar) statsBar.style.display = 'none';
   }
 }
 
-function calculateAttendancePercentage(internId, allAttendance, selectedDate) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const selected = new Date(selectedDate + 'T00:00:00');
+function renderAttendanceView(interns, attendanceList, dateStr) {
+  const statsBar = document.getElementById('stats-bar');
+  const emptyState = document.getElementById('empty-state');
+  const tbody = document.getElementById('attendance-tbody');
+  const isAdmin = auth.isAdmin();
+  const isStudent = auth.isStudent();
+  const user = auth.getCurrentUser();
 
-  const pastRecords = allAttendance.filter(a => {
-    const recordDate = new Date(a.date + 'T00:00:00');
-    return recordDate <= today;
-  });
+  if (!tbody) return;
 
-  if (pastRecords.length === 0) return 0;
+  let displayInterns = interns || [];
 
-  const presentCount = pastRecords.filter(a => a.status === 'Present').length;
-  return Math.round((presentCount / pastRecords.length) * 100);
-}
+  if (isStudent && user) {
+    const userUid = user.uid || user.id;
+    const userEmail = (user.email || '').toLowerCase().trim();
+    displayInterns = displayInterns.filter(i => 
+      (userUid && (i.uid === userUid || i.userId === userUid || (i.allIds && i.allIds.includes(userUid)))) ||
+      (userEmail && i.email && i.email.toLowerCase().trim() === userEmail)
+    );
+  }
 
-function updateStatsBar(interns, attendanceMap) {
-  const statPresent = document.getElementById('stat-present');
-  const statAbsent = document.getElementById('stat-absent');
-  const statLeave = document.getElementById('stat-leave');
-  const statHalf = document.getElementById('stat-half');
-  const statNotMarked = document.getElementById('stat-not-marked');
-  const statTotal = document.getElementById('stat-total');
+  if (displayInterns.length === 0) {
+    tbody.innerHTML = '';
+    if (emptyState) emptyState.style.display = 'block';
+    if (statsBar) statsBar.style.display = 'none';
+    return;
+  }
 
-  if (!statPresent) return;
+  if (emptyState) emptyState.style.display = 'none';
 
-  let present = 0, absent = 0, leave = 0, half = 0, notMarked = 0;
-
-  interns.forEach(intern => {
-    const record = attendanceMap.get(intern.internId);
-    if (record) {
-      switch (record.status) {
-        case 'Present': present++; break;
-        case 'Absent': absent++; break;
-        case 'Leave': leave++; break;
-        case 'Half Day': half++; break;
-        case 'Not Marked': notMarked++; break;
-      }
-    } else {
-      notMarked++;
+  const attendanceMap = new Map();
+  (attendanceList || []).forEach(a => {
+    if (a.date === dateStr && a.internId) {
+      attendanceMap.set(a.internId, a);
     }
   });
 
-  statPresent.textContent = present;
-  statAbsent.textContent = absent;
-  statLeave.textContent = leave;
-  statHalf.textContent = half;
-  statNotMarked.textContent = notMarked;
-  statTotal.textContent = interns.length;
+  tbody.innerHTML = displayInterns.map(intern => {
+    const targetIds = [intern.internId, intern.id, intern.uid, intern.userId, ...(intern.allIds || [])].filter(Boolean);
+    let record = null;
+    for (const id of targetIds) {
+      if (attendanceMap.has(id)) {
+        record = attendanceMap.get(id);
+        break;
+      }
+    }
+
+    const key = intern.internId || intern.id;
+    const displayId = fbDb.formatDisplayInternId(intern);
+    const displayCourse = fbDb.formatCourse(intern.course);
+    
+    // Status is strictly Present or Absent in the active model
+    const currentStatus = (record && record.status === 'Absent') ? 'Absent' : 'Present';
+    const remarks = record ? (record.remarks || '') : '';
+    const attendancePercent = fbDb.getInternAttendancePercentage(intern, attendanceList);
+
+    return `
+      <tr>
+        <td><strong>${escapeHtml(displayId)}</strong></td>
+        <td>
+          <div style="font-weight: 700;">${escapeHtml(intern.name || 'Unnamed')}</div>
+          <div style="font-size: 12px; color: var(--text-muted);">${escapeHtml(intern.college || displayCourse)}</div>
+        </td>
+        <td>${escapeHtml(intern.department || '—')}</td>
+        <td>
+          ${isAdmin ? `
+            <select class="attendance-select attendance-status-select" data-intern-id="${key}" style="width: 130px; font-weight: 700;">
+              <option value="Present" ${currentStatus === 'Present' ? 'selected' : ''}>Present</option>
+              <option value="Absent" ${currentStatus === 'Absent' ? 'selected' : ''}>Absent</option>
+            </select>
+          ` : `
+            <span class="status-badge status-${currentStatus.toLowerCase()}">${escapeHtml(currentStatus)}</span>
+          `}
+        </td>
+        <td>
+          ${isAdmin ? `
+            <input type="text" class="remarks-input attendance-remarks-input" data-intern-id="${key}" value="${escapeHtml(remarks)}" placeholder="e.g. Ward duty shift">
+          ` : `
+            <span>${escapeHtml(remarks || '—')}</span>
+          `}
+        </td>
+        <td>
+          <strong style="color: ${attendancePercent >= 75 ? '#059669' : attendancePercent >= 50 ? '#d97706' : '#dc2626'};">${attendancePercent}%</strong>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  updateStatsBar();
+
+  if (isAdmin) {
+    document.querySelectorAll('.attendance-status-select').forEach(select => {
+      select.addEventListener('change', () => updateStatsBar());
+    });
+  }
+
+  if (statsBar) statsBar.style.display = 'flex';
+}
+
+function updateStatsBar() {
+  const statPresent = document.getElementById('stat-present');
+  const statAbsent = document.getElementById('stat-absent');
+  const statTotal = document.getElementById('stat-total');
+
+  if (!statPresent || !statAbsent || !statTotal) return;
+
+  const isAdmin = auth.isAdmin();
+  let presentCount = 0;
+  let absentCount = 0;
+  let totalCount = 0;
+
+  if (isAdmin) {
+    const selects = document.querySelectorAll('.attendance-status-select');
+    totalCount = selects.length;
+    selects.forEach(select => {
+      if (select.value === 'Present') {
+        presentCount++;
+      } else if (select.value === 'Absent') {
+        absentCount++;
+      }
+    });
+  } else {
+    const badges = document.querySelectorAll('.status-badge');
+    totalCount = badges.length;
+    badges.forEach(badge => {
+      const text = badge.textContent.trim();
+      if (text === 'Present') {
+        presentCount++;
+      } else if (text === 'Absent') {
+        absentCount++;
+      }
+    });
+  }
+
+  statPresent.textContent = presentCount;
+  statAbsent.textContent = absentCount;
+  statTotal.textContent = totalCount;
 }
 
 function escapeHtml(text) {
@@ -225,7 +247,8 @@ function showToast(message, type = 'info') {
 }
 
 async function handleSaveBatchAttendance() {
-  const dateStr = document.getElementById('attendance-date-picker').value;
+  const datePicker = document.getElementById('attendance-date-picker');
+  const dateStr = datePicker ? datePicker.value : new Date().toISOString().split('T')[0];
   const statusSelects = document.querySelectorAll('.attendance-status-select');
   const remarksInputs = document.querySelectorAll('.attendance-remarks-input');
   const saveBtn = document.getElementById('save-attendance-btn');
@@ -256,10 +279,6 @@ async function handleSaveBatchAttendance() {
       const remarksInput = Array.from(remarksInputs).find(input => input.getAttribute('data-intern-id') === internId);
       const remarks = remarksInput ? remarksInput.value.trim() : '';
 
-      if (status === 'Not Marked') {
-        continue;
-      }
-
       await fbDb.markAttendance({
         internId,
         date: dateStr,
@@ -267,6 +286,22 @@ async function handleSaveBatchAttendance() {
         remarks
       });
     }
+
+    // Update attendance percentage back to Firestore intern records
+    const [allInterns, updatedAttendance] = await Promise.all([
+      fbDb.getEnrolledInterns({ forceRefresh: true }),
+      fbDb.getAttendance({ forceRefresh: true })
+    ]);
+
+    for (const intern of allInterns) {
+      if (intern.id) {
+        const newPct = fbDb.getInternAttendancePercentage(intern, updatedAttendance);
+        await fbDb.updateIntern(intern.id, { attendancePercentage: newPct }).catch(e => {
+          console.warn('[Attendance] Failed to update intern percentage:', e);
+        });
+      }
+    }
+
   } catch (error) {
     console.error('[Attendance] Save error:', error);
     success = false;
@@ -280,7 +315,7 @@ async function handleSaveBatchAttendance() {
 
   if (success) {
     showToast('Attendance saved successfully.', 'success');
-    loadAttendanceData();
+    loadAttendanceData(true);
   } else {
     showToast('Failed to save: ' + errorMsg, 'error');
   }

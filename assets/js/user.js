@@ -68,7 +68,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             modal?.classList.remove("active");
             editingUserId = null;
             if (modalTitle) modalTitle.innerText = "Add New User";
-            loadUsers();
+            loadUsers(true);
 
         } catch (error) {
             console.error("Full Error:", error);
@@ -195,24 +195,52 @@ async function confirmDelete() {
         await fbDb.deleteUser(userToDelete);
         showToast("User deleted successfully!", "success");
         closeDeleteModal();
-        loadUsers();
+        loadUsers(true);
     } catch (error) {
         console.error("Full Error:", error);
         showToast(error.message, "error");
     }
 }
 
-async function loadUsers() {
+async function loadUsers(forceRefresh = false) {
     const tbody = document.getElementById("user-tbody");
     const emptyState = document.getElementById("empty-state");
     if (!tbody) return;
 
-    tbody.innerHTML = `<tr><td colspan="7" style="padding: 40px;"><div style="display: flex; flex-direction: column; gap: 12px;"><div class="skeleton" style="width: 100%; height: 40px;"></div><div class="skeleton" style="width: 100%; height: 40px;"></div><div class="skeleton" style="width: 100%; height: 40px;"></div></div></td></tr>`;
-    if (emptyState) emptyState.style.display = "none";
+    const cached = fbDb.CacheManager.get('users');
+    if (!cached.exists || !cached.data || cached.data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="padding: 40px;"><div style="display: flex; flex-direction: column; gap: 12px;"><div class="skeleton" style="width: 100%; height: 40px;"></div><div class="skeleton" style="width: 100%; height: 40px;"></div><div class="skeleton" style="width: 100%; height: 40px;"></div></div></td></tr>`;
+        if (emptyState) emptyState.style.display = "none";
+    }
+
+    const processUsers = (rawUsers) => {
+        const emailMap = new Map();
+        (rawUsers || []).forEach(user => {
+            const email = (user.email || '').toLowerCase();
+            if (!email) return;
+            if (!emailMap.has(email)) {
+                emailMap.set(email, user);
+            } else {
+                const existing = emailMap.get(email);
+                if (user.id === user.uid && existing.id !== existing.uid) {
+                    emailMap.set(email, user);
+                }
+            }
+        });
+        const noEmail = (rawUsers || []).filter(u => !u.email);
+        allUsers = [...emailMap.values(), ...noEmail];
+        filterAndRenderUsers();
+    };
 
     try {
-        allUsers = await fbDb.getUsers();
-        filterAndRenderUsers();
+        const users = await fbDb.getUsers({
+            forceRefresh,
+            onBackgroundUpdate: (fresh) => {
+                processUsers(fresh);
+            }
+        });
+
+        processUsers(users);
     } catch (error) {
         console.error(error);
         tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:red;padding:20px;">Failed to load users.</td></tr>`;

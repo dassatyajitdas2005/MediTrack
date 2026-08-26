@@ -18,6 +18,7 @@ import {
   deleteDoc,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+import { CacheManager } from "./cache.js";
 
 const CACHE_KEY = "meditrack_firebase_user";
 
@@ -135,42 +136,83 @@ async function sendOTPEmail(email, otp, name) {
 /* ========== AUTH SERVICE ========== */
 class AuthService {
   constructor() {
-    this._redirectIfNeeded();
+    this._initPromise = null;
+    this._currentUser = null;
   }
 
-  _redirectIfNeeded() {
-    const page = window.location.pathname.split("/").pop();
-    const publicPages = ["login.html", "signup.html", "verify-otp.html", "index.html", ""];
-    if (!readCache() && !publicPages.includes(page)) {
-      window.location.replace("login.html");
+  init() {
+    const cachedUser = readCache();
+    if (cachedUser && !this._currentUser) {
+      this._currentUser = cachedUser;
     }
-  }
 
-  async init() {
-    return new Promise((resolve) => {
-      onAuthStateChanged(firebaseAuth, async (user) => {
-        if (!user) {
-          clearCache();
-          resolve(null);
-          return;
+    if (!this._initPromise) {
+      this._initPromise = new Promise((resolve) => {
+        let hasResolved = false;
+
+        // If we already have a cached user session, resolve immediately for instant UI
+        if (cachedUser) {
+          hasResolved = true;
+          resolve(cachedUser);
         }
-        try {
-          const snap = await getDoc(doc(db, "users", user.uid));
-          if (snap.exists()) saveCache(snap.data());
-        } catch (err) {
-          console.warn("Firestore sync failed:", err);
-        }
-        resolve(readCache());
+
+        onAuthStateChanged(firebaseAuth, async (user) => {
+          if (!user) {
+            clearCache();
+            CacheManager.clearAll();
+            this._currentUser = null;
+            if (!hasResolved) {
+              hasResolved = true;
+              resolve(null);
+            }
+            return;
+          }
+          try {
+            const snap = await getDoc(doc(db, "users", user.uid));
+            if (snap.exists()) {
+              const data = snap.data();
+              const fullUserData = {
+                uid: user.uid,
+                email: user.email,
+                ...data,
+                emailVerified: user.emailVerified || data.emailVerified === true
+              };
+              saveCache(fullUserData);
+              this._currentUser = fullUserData;
+            } else {
+              const fallbackUserData = {
+                uid: user.uid,
+                email: user.email,
+                role: "student",
+                name: user.displayName || user.email.split("@")[0],
+                department: "Pharmacy",
+                status: "active",
+                emailVerified: user.emailVerified
+              };
+              saveCache(fallbackUserData);
+              this._currentUser = fallbackUserData;
+            }
+          } catch (err) {
+            console.warn("[AuthService] Firestore sync warning:", err);
+            this._currentUser = readCache();
+          }
+
+          if (!hasResolved) {
+            hasResolved = true;
+            resolve(this._currentUser || readCache());
+          }
+        });
       });
-    });
+    }
+    return this._initPromise;
   }
 
   getCurrentUser() {
-    return readCache();
+    return this._currentUser || readCache();
   }
 
   isEmailVerified() {
-    const user = readCache();
+    const user = this.getCurrentUser();
     return user ? user.emailVerified === true : false;
   }
 
@@ -414,8 +456,11 @@ class AuthService {
 
   /* ========== LOGOUT ========== */
   async logout() {
-    await signOut(firebaseAuth);
+    this._initPromise = null;
+    this._currentUser = null;
+    CacheManager.clearAll();
     clearCache();
+    await signOut(firebaseAuth).catch(() => {});
     window.location.href = "login.html";
   }
 

@@ -171,34 +171,6 @@
     </div>
   </div>
 
-  <!-- Auth Check + Verification Banner Script -->
-  <script type="module">
-    import { auth } from "./assets/js/auth.js";
-
-    document.addEventListener('DOMContentLoaded', async () => {
-      await auth.init();
-
-      const user = auth.getCurrentUser();
-      if (!user) return;
-
-      // FIXED: Only show banner if email is NOT verified
-      if (!auth.isEmailVerified()) {
-        const banner = document.getElementById('verify-banner');
-        if (banner) banner.style.display = 'flex';
-
-        document.getElementById('resend-verify')?.addEventListener('click', async (e) => {
-          e.preventDefault();
-          try {
-            await auth.resendVerification();
-            alert('Verification email sent! Check your inbox (and spam folder).');
-          } catch (err) {
-            alert(err.message);
-          }
-        });
-      }
-    });
-  </script>
-
   <!-- Dashboard Logic -->
   <script type="module" src="assets/js/dashboard.js"></script>
 </body>

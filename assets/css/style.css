@@ -295,6 +295,11 @@ button, input, select, textarea {
   gap: 16px;
 }
 
+/* Mobile Only Utility (Hidden on desktop > 1024px) */
+.mobile-only {
+  display: none !important;
+}
+
 .menu-toggle {
   background: none;
   border: none;
@@ -307,7 +312,16 @@ button, input, select, textarea {
   width: 40px;
   height: 40px;
   border-radius: var(--radius-md);
-  transition: background-color var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.sidebar-header .menu-toggle {
+  color: #94a3b8;
+}
+
+.sidebar-header .menu-toggle:hover {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.08);
 }
 
 .menu-toggle:hover {
@@ -389,8 +403,16 @@ button, input, select, textarea {
   flex: 1;
 }
 
+/* Mobile-only elements hidden by default on desktop/laptop */
+.mobile-only {
+  display: none !important;
+}
+
 /* Responsive Overlays & Mobile Adjustments */
 @media (max-width: 1024px) {
+  .mobile-only {
+    display: flex !important;
+  }
   .sidebar {
     transform: translateX(-100%);
   }
