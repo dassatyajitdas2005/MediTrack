@@ -1,14 +1,92 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Training Progress - MediTrack</title>
+
+  <script>
+    (function () {
+      const savedTheme = localStorage.getItem('meditrack_theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    })();
+  </script>
   
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/css/theme.css">
   <link rel="stylesheet" href="assets/css/components.css">
   <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+
+  <style>
+    /* Certificate Badges */
+    .cert-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      border-radius: var(--radius-full, 9999px);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .cert-issued {
+      background: rgba(16, 185, 129, 0.15);
+      color: #059669;
+    }
+
+    .cert-pending {
+      background: rgba(245, 158, 11, 0.15);
+      color: #d97706;
+    }
+
+    .training-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+      gap: 12px;
+    }
+
+    .intern-title {
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 4px;
+      color: var(--text-main);
+    }
+
+    .intern-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .progress-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 6px;
+      font-weight: 600;
+    }
+
+    .training-stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      font-size: 13px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    @media (max-width: 560px) {
+      .training-stats-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
 <body>
   <div class="app-container">
@@ -22,14 +100,17 @@
         <div class="glass-card" style="padding: 20px; margin-bottom: 24px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px;">
           <div class="search-box" style="flex: 1; min-width: 260px;">
             <i class="bx bx-search search-icon"></i>
-            <input type="text" id="training-search" class="form-control" placeholder="Search by intern name or ID...">
+            <input type="text" id="training-search" class="form-control" placeholder="Search by intern name, ID, or course...">
           </div>
 
           <select id="training-course-filter" class="form-control" style="width: 220px;">
             <option value="">All Course Types</option>
-            <option value="Diploma Pharmacy">Diploma Pharmacy (90 Days)</option>
-            <option value="B.Pharm">B.Pharm (30 Days)</option>
-            <option value="Nursing">Nursing (30 Days)</option>
+            <option value="D.Pharm">D.Pharm</option>
+            <option value="Diploma Pharmacy">Diploma Pharmacy</option>
+            <option value="B.Pharm">B.Pharm</option>
+            <option value="Nursing">Nursing</option>
+            <option value="GNM">GNM</option>
+            <option value="ANM">ANM</option>
             <option value="DMLT">DMLT</option>
             <option value="Physiotherapy">Physiotherapy</option>
           </select>

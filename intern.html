@@ -51,22 +51,79 @@
       background: var(--accent-rose);
     }
 
+    /* Table & Container Optimization for Laptops */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-color);
+      background-color: var(--bg-surface);
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13px;
+    }
+
+    .data-table th {
+      background-color: var(--bg-main);
+      padding: 12px 10px;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border-color);
+      white-space: nowrap;
+    }
+
+    .data-table td {
+      padding: 12px 10px;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-main);
+      vertical-align: middle;
+      font-size: 13px;
+    }
+
+    .data-table tbody tr:hover {
+      background-color: rgba(14, 165, 233, 0.04);
+    }
+
+    .data-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* Column Width Guide */
+    .col-id { width: 85px; }
+    .col-student { min-width: 140px; }
+    .col-course { width: 100px; }
+    .col-dept { width: 95px; }
+    .col-dates { width: 100px; }
+    .col-progress { width: 105px; }
+    .col-att { width: 75px; text-align: center; }
+    .col-cert { width: 90px; text-align: center; }
+    .col-actions { width: 75px; text-align: center; }
+
     /* Table Actions */
     .action-btns {
       display: flex;
-      gap: 8px;
+      gap: 4px;
+      justify-content: center;
+      align-items: center;
     }
 
     .action-btns button {
-      width: 32px;
-      height: 32px;
+      width: 28px;
+      height: 28px;
       border-radius: var(--radius-md);
       border: none;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      font-size: 16px;
+      font-size: 14px;
       transition: all 0.2s;
     }
 
@@ -94,11 +151,12 @@
     .cert-badge {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      padding: 4px 12px;
+      gap: 4px;
+      padding: 3px 8px;
       border-radius: var(--radius-full);
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
+      white-space: nowrap;
     }
 
     .cert-issued {
@@ -174,90 +232,95 @@
 
 <body>
 
-  <!-- Navbar / Sidebar -->
-  <div id="sidebar-container"></div>
+  <div class="app-container">
+    <!-- Navbar / Sidebar -->
+    <div id="sidebar-container"></div>
 
-  <!-- ===== MAIN CONTENT ===== -->
-  <div class="main-wrapper">
+    <!-- ===== MAIN CONTENT ===== -->
+    <div class="main-wrapper">
 
-    <div id="navbar-container"></div>
+      <div id="navbar-container"></div>
 
-    <main class="page-content animate-fade-in">
-      <!-- Header & Filters -->
-      <div class="glass-card" style="padding: 20px; margin-bottom: 24px;">
-        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px;">
-          <div style="display: flex; gap: 16px; flex: 1; min-width: 280px; align-items: center;">
-            <div class="search-box" style="flex: 1;">
-              <i class="bx bx-search search-icon"></i>
-              <input type="text" id="intern-search-input" class="form-control"
-                placeholder="Search intern by name, ID, or college...">
+      <main class="page-content animate-fade-in">
+        <!-- Toast Notification Container -->
+        <div id="toast" class="toast"></div>
+
+        <!-- Header & Filters -->
+        <div class="glass-card" style="padding: 18px 20px; margin-bottom: 20px;">
+          <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px;">
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; flex: 1; min-width: 260px; align-items: center;">
+              <div class="search-box" style="flex: 1; min-width: 180px;">
+                <i class="bx bx-search search-icon"></i>
+                <input type="text" id="intern-search-input" class="form-control"
+                  placeholder="Search intern by name, ID, or college...">
+              </div>
+              <select id="intern-dept-filter" class="form-control" style="width: 150px;">
+                <option value="">All Departments</option>
+                <option value="Pharmacy">Pharmacy</option>
+                <option value="OPD Store">OPD Store</option>
+                <option value="General Surgery">General Surgery</option>
+                <option value="Pathology Lab">Pathology Lab</option>
+                <option value="Physiotherapy OPD">Physiotherapy OPD</option>
+                <option value="Outdoor">Outdoor</option>
+                <option value="Indoor">Indoor</option>
+                <option value="Emergency Ward">Emergency Ward</option>
+                <option value="General Medicine">General Medicine</option>
+              </select>
+              <select id="intern-course-filter" class="form-control" style="width: 150px;">
+                <option value="">All Courses</option>
+                <option value="Diploma Pharmacy">Diploma Pharmacy</option>
+                <option value="B.Pharm">B.Pharm</option>
+                <option value="Nursing">Nursing</option>
+                <option value="DMLT">DMLT</option>
+                <option value="Physiotherapy">Physiotherapy</option>
+                <option value="GNM">GNM</option>
+                <option value="ANM">ANM</option>
+              </select>
             </div>
-            <select id="intern-dept-filter" class="form-control" style="width: 180px;">
-              <option value="">All Departments</option>
-              <option value="Pharmacy">Pharmacy</option>
-              <option value="OPD Store">OPD Store</option>
-              <option value="General Surgery">General Surgery</option>
-              <option value="Pathology Lab">Pathology Lab</option>
-              <option value="Physiotherapy OPD">Physiotherapy OPD</option>
-              <option value="Outdoor">Outdoor</option>
-              <option value="Indoor">Indoor</option>
-              <option value="Emergency Ward">Emergency Ward</option>
-              <option value="General Medicine">General Medicine</option>
-            </select>
-            <select id="intern-course-filter" class="form-control" style="width: 180px;">
-              <option value="">All Courses</option>
-              <option value="Diploma Pharmacy">Diploma Pharmacy</option>
-              <option value="B.Pharm">B.Pharm</option>
-              <option value="Nursing">Nursing</option>
-              <option value="DMLT">DMLT</option>
-              <option value="Physiotherapy">Physiotherapy</option>
-              <option value="GNM">GNM</option>
-              <option value="ANM">ANM</option>
-            </select>
+            <button id="add-intern-btn" class="btn btn-primary" style="white-space: nowrap;">
+              <i class="bx bx-plus"></i> Add New Intern
+            </button>
           </div>
-          <button id="add-intern-btn" class="btn btn-primary">
-            <i class="bx bx-plus"></i> Add New Intern
-          </button>
         </div>
-      </div>
 
-      <!-- Table -->
-      <div class="glass-card" style="padding: 24px;">
-        <div class="table-container">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Intern ID</th>
-                <th>Student & College</th>
-                <th>Course</th>
-                <th>Department</th>
-                <th>Training Dates</th>
-                <th>Progress</th>
-                <th>Attendance</th>
-                <th>Certificate</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="intern-tbody">
-              <tr>
-                <td colspan="9" style="padding: 40px;">
-                  <div style="display: flex; flex-direction: column; gap: 12px;">
-                    <div class="skeleton" style="width: 100%; height: 40px;"></div>
-                    <div class="skeleton" style="width: 100%; height: 40px;"></div>
-                    <div class="skeleton" style="width: 100%; height: 40px;"></div>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-          <div id="empty-state" class="empty-state" style="display: none;">
-            <i class="bx bx-user-x"></i>
-            <h3>No interns found</h3>
-            <p>Add a new intern to get started.</p>
+        <!-- Table -->
+        <div class="glass-card" style="padding: 16px 20px;">
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th class="col-id">Intern ID</th>
+                  <th class="col-student">Student & College</th>
+                  <th class="col-course">Course</th>
+                  <th class="col-dept">Department</th>
+                  <th class="col-dates">Training Dates</th>
+                  <th class="col-progress">Progress</th>
+                  <th class="col-att">Attendance</th>
+                  <th class="col-cert">Certificate</th>
+                  <th class="col-actions">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="intern-tbody">
+                <tr>
+                  <td colspan="9" style="padding: 40px;">
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                      <div class="skeleton" style="width: 100%; height: 36px;"></div>
+                      <div class="skeleton" style="width: 100%; height: 36px;"></div>
+                      <div class="skeleton" style="width: 100%; height: 36px;"></div>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div id="empty-state" class="empty-state" style="display: none;">
+              <i class="bx bx-user-x"></i>
+              <h3>No interns found</h3>
+              <p>Add a new intern to get started.</p>
+            </div>
           </div>
         </div>
-      </div>
-    </main>
+      </main>
+    </div>
   </div>
 
   <!-- ===== MODALS ===== -->
@@ -306,13 +369,13 @@
             <div class="form-group">
               <label class="form-label">Department *</label>
               <select id="intern-department" class="form-control" required>
+                <option value="Pharmacy">Pharmacy</option>
                 <option value="Outdoor">Outdoor</option>
                 <option value="Indoor">Indoor</option>
                 <option value="Camp">Camp</option>
                 <option value="Physiotherapy OPD">Physiotherapy OPD</option>
                 <option value="Emergency Ward">Emergency Ward</option>
                 <option value="General Medicine">General Medicine</option>
-                <option value="Pharmacy">Pharmacy</option>
                 <option value="OPD Store">OPD Store</option>
                 <option value="General Surgery">General Surgery</option>
               </select>

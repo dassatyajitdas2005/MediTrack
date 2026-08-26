@@ -26,8 +26,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     await auth.init();
 
 
-    // Only Admin can access
-    const isAllowed = await auth.checkAuth(["admin", "supervisor"]);
+    // Allow Admin, Supervisor, and Student roles
+    const isAllowed = await auth.checkAuth(["admin", "supervisor", "student"]);
     if (!isAllowed) {
       return;
     }
@@ -67,7 +67,7 @@ function initDoctorModule() {
   }
 
 
-  const isAdmin = user.role === "admin";
+  const isAdmin = auth.isAdmin();
 
 
   console.log("Doctor page user:", user);
@@ -223,9 +223,8 @@ async function loadDoctors() {
       "doctor-grid-container"
     );
 
-
-  if (container) {
-
+  const cached = fbDb.CacheManager.get('doctors');
+  if (container && (!cached.exists || !cached.data || cached.data.length === 0)) {
     container.innerHTML = `
             <div
                 class="glass-card"
@@ -254,25 +253,23 @@ async function loadDoctors() {
 
             </div>
         `;
-
   }
 
-
   try {
-
-    currentDoctors =
-      await fbDb.getDoctors();
-
+    currentDoctors = await fbDb.getDoctors({
+      onBackgroundUpdate: (fresh) => {
+        console.log("Doctors updated in background:", fresh);
+        currentDoctors = fresh;
+        renderOPDSchedule();
+      }
+    });
 
     console.log(
       "Doctors loaded:",
       currentDoctors
     );
 
-
     renderOPDSchedule();
-
-
   } catch (error) {
 
     console.error(
@@ -344,7 +341,7 @@ function renderOPDSchedule() {
 
 
   const isAdmin =
-    user?.role === "admin";
+    auth.isAdmin();
 
 
   const availableDocs =
@@ -724,6 +721,14 @@ function renderOPDSchedule() {
 
 function openDoctorModal(doctorId = null) {
 
+  if (!auth.isAdmin()) {
+    showToast(
+      "Access Denied: Only administrators can modify doctor records.",
+      "error"
+    );
+    return;
+  }
+
   const modal =
     document.getElementById(
       "doctor-modal"
@@ -928,10 +933,10 @@ async function handleDoctorFormSubmit(event) {
      ADMIN CHECK
   ====================================== */
 
-  if (!user || user.role !== "admin") {
+  if (!auth.isAdmin()) {
 
     showToast(
-      "Only admin can modify doctor records.",
+      "Access Denied: Only administrators can modify doctor records.",
       "error"
     );
 
@@ -1085,6 +1090,14 @@ async function handleDoctorFormSubmit(event) {
 
 function openDeleteModal(doctorId) {
 
+  if (!auth.isAdmin()) {
+    showToast(
+      "Access Denied: Only administrators can delete doctor records.",
+      "error"
+    );
+    return;
+  }
+
   const doctor =
     currentDoctors.find(
       item =>
@@ -1172,10 +1185,10 @@ async function confirmDeleteDoctor() {
     auth.getCurrentUser();
 
 
-  if (!user || user.role !== "admin") {
+  if (!auth.isAdmin()) {
 
     showToast(
-      "Only admin can delete doctors.",
+      "Access Denied: Only administrators can delete doctor records.",
       "error"
     );
 

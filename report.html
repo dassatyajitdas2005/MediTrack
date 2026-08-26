@@ -3,12 +3,153 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Theme FOUC Fix -->
+  <script>
+    (function () {
+      const savedTheme = localStorage.getItem('meditrack_theme') || 'light';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    })();
+  </script>
+
   <title>Reports &amp; Analytics - MediTrack</title>
   
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/css/theme.css">
   <link rel="stylesheet" href="assets/css/components.css">
   <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+
+  <style>
+    /* Certificate Status Badges */
+    .cert-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      border-radius: var(--radius-full, 9999px);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .cert-issued {
+      background: rgba(16, 185, 129, 0.15);
+      color: #059669;
+    }
+
+    .cert-pending {
+      background: rgba(245, 158, 11, 0.15);
+      color: #d97706;
+    }
+
+    /* Print Header - Hidden on screen, visible when printing */
+    .print-header {
+      display: none;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid #0f172a;
+    }
+
+    .print-header .brand-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .print-header .report-meta {
+      font-size: 12px;
+      color: #475569;
+      margin-top: 4px;
+    }
+
+    /* Print Media Stylesheet */
+    @media print {
+      body {
+        background: #ffffff !important;
+        color: #0f172a !important;
+        font-size: 11pt;
+      }
+
+      #sidebar-container,
+      #navbar-container,
+      .sidebar,
+      .top-navbar,
+      #report-actions-bar,
+      #report-filter-bar,
+      .theme-toggle-btn,
+      #toast,
+      #profile-popup-overlay,
+      button {
+        display: none !important;
+      }
+
+      .app-container {
+        display: block !important;
+      }
+
+      .main-wrapper {
+        margin-left: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+      }
+
+      .page-content {
+        padding: 0 !important;
+      }
+
+      .print-header {
+        display: block !important;
+      }
+
+      .glass-card {
+        background: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        box-shadow: none !important;
+        margin-bottom: 20px !important;
+        padding: 16px !important;
+        page-break-inside: avoid;
+      }
+
+      .kpi-card {
+        padding: 12px !important;
+      }
+
+      .grid-4 {
+        display: grid !important;
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 12px !important;
+        margin-bottom: 20px !important;
+      }
+
+      .table-container {
+        overflow: visible !important;
+      }
+
+      .data-table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+      }
+
+      .data-table th,
+      .data-table td {
+        border: 1px solid #cbd5e1 !important;
+        padding: 6px 8px !important;
+        color: #0f172a !important;
+        font-size: 10pt !important;
+      }
+
+      .data-table th {
+        background-color: #f1f5f9 !important;
+        font-weight: 700 !important;
+      }
+
+      tr {
+        page-break-inside: avoid !important;
+      }
+    }
+  </style>
 </head>
 <body>
   <div class="app-container">
@@ -18,14 +159,25 @@
       <div id="navbar-container"></div>
 
       <main class="page-content animate-fade-in">
+        <!-- Print Header (Visible in window.print()) -->
+        <div class="print-header">
+          <div class="brand-title">
+            <i class="bx bx-plus-medical" style="color: #0284c7;"></i>
+            MediTrack — Hospital Training &amp; OPD Summary Report
+          </div>
+          <div class="report-meta" id="print-report-meta">
+            Official System Report · Generated on <span id="print-timestamp"></span>
+          </div>
+        </div>
+
         <!-- Control Export Actions Bar -->
-        <div class="glass-card" style="padding: 20px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
+        <div id="report-actions-bar" class="glass-card" style="padding: 20px; margin-bottom: 24px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px;">
           <div>
             <h2 style="font-size: 18px; font-weight: 800;">Hospital Training Summary Reports</h2>
             <p style="font-size: 13px; color: var(--text-muted);">Attendance summary, training completion, doctor OPD lists</p>
           </div>
 
-          <div style="display: flex; gap: 12px;">
+          <div style="display: flex; gap: 12px; flex-wrap: wrap;">
             <button id="export-csv-btn" class="btn btn-secondary">
               <i class="bx bx-download"></i> Export CSV Data
             </button>
@@ -41,7 +193,9 @@
             <div class="kpi-icon blue"><i class="bx bx-calendar-event"></i></div>
             <div class="kpi-content">
               <div class="kpi-title">Total Logs</div>
-              <div class="kpi-value" id="rpt-total-logs">0</div>
+              <div class="kpi-value" id="rpt-total-logs">
+                <i class="bx bx-loader-alt bx-spin" style="font-size: 20px; color: var(--text-muted);"></i>
+              </div>
             </div>
           </div>
 
@@ -49,7 +203,9 @@
             <div class="kpi-icon emerald"><i class="bx bx-check-circle"></i></div>
             <div class="kpi-content">
               <div class="kpi-title">Present Logs</div>
-              <div class="kpi-value" id="rpt-present-count">0</div>
+              <div class="kpi-value" id="rpt-present-count">
+                <i class="bx bx-loader-alt bx-spin" style="font-size: 20px; color: var(--text-muted);"></i>
+              </div>
             </div>
           </div>
 
@@ -57,7 +213,9 @@
             <div class="kpi-icon rose"><i class="bx bx-x-circle"></i></div>
             <div class="kpi-content">
               <div class="kpi-title">Absent Logs</div>
-              <div class="kpi-value" id="rpt-absent-count">0</div>
+              <div class="kpi-value" id="rpt-absent-count">
+                <i class="bx bx-loader-alt bx-spin" style="font-size: 20px; color: var(--text-muted);"></i>
+              </div>
             </div>
           </div>
 
@@ -65,16 +223,40 @@
             <div class="kpi-icon purple"><i class="bx bx-line-chart"></i></div>
             <div class="kpi-content">
               <div class="kpi-title">Avg Attendance %</div>
-              <div class="kpi-value" id="rpt-avg-attendance">0%</div>
+              <div class="kpi-value" id="rpt-avg-attendance">
+                <i class="bx bx-loader-alt bx-spin" style="font-size: 20px; color: var(--text-muted);"></i>
+              </div>
             </div>
           </div>
         </div>
 
         <!-- Section 1: Intern Master Report -->
         <div class="glass-card" style="padding: 24px; margin-bottom: 24px;">
-          <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
-            <i class="bx bx-group"></i> Intern Training Master Report
-          </h3>
+          <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 16px;">
+            <h3 style="font-size: 16px; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+              <i class="bx bx-group"></i> Intern Training Master Report
+            </h3>
+
+            <!-- Search & Filter Controls -->
+            <div id="report-filter-bar" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
+              <div class="search-box" style="width: 240px;">
+                <i class="bx bx-search search-icon"></i>
+                <input type="text" id="report-search-input" class="form-control" placeholder="Search intern or ID...">
+              </div>
+              <select id="report-course-filter" class="form-control" style="width: 180px;">
+                <option value="">All Courses</option>
+                <option value="D.Pharm">D.Pharm</option>
+                <option value="Diploma Pharmacy">Diploma Pharmacy</option>
+                <option value="B.Pharm">B.Pharm</option>
+                <option value="Nursing">Nursing</option>
+                <option value="GNM">GNM</option>
+                <option value="ANM">ANM</option>
+                <option value="DMLT">DMLT</option>
+                <option value="Physiotherapy">Physiotherapy</option>
+              </select>
+            </div>
+          </div>
+
           <div class="table-container">
             <table class="data-table">
               <thead>
@@ -89,7 +271,12 @@
                 </tr>
               </thead>
               <tbody id="rpt-interns-tbody">
-                <!-- Dynamic intern report rows -->
+                <tr>
+                  <td colspan="7" style="text-align:center; padding: 36px; color: var(--text-muted);">
+                    <i class="bx bx-loader-alt bx-spin" style="font-size: 28px; color: var(--primary-500); margin-bottom: 8px; display: block;"></i>
+                    Loading intern training records...
+                  </td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -113,7 +300,12 @@
                 </tr>
               </thead>
               <tbody id="rpt-doctors-tbody">
-                <!-- Dynamic doctor report rows -->
+                <tr>
+                  <td colspan="6" style="text-align:center; padding: 36px; color: var(--text-muted);">
+                    <i class="bx bx-loader-alt bx-spin" style="font-size: 28px; color: var(--primary-500); margin-bottom: 8px; display: block;"></i>
+                    Loading doctor OPD schedule...
+                  </td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -121,6 +313,9 @@
       </main>
     </div>
   </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast" class="toast"></div>
 
   <script type="module" src="assets/js/report.js"></script>
 </body>

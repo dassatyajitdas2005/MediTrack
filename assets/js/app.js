@@ -2,6 +2,8 @@
 
 import { auth } from './auth.js';
 import { theme } from './theme.js';
+import { preloadApplicationData } from './cache.js';
+import * as fbDb from './firebase-db.js';
 
 /**
  * Get sidebar items based on user role
@@ -12,7 +14,7 @@ function getSidebarItems(role) {
   const dashboardItem = { id: 'dashboard', icon: 'bx-grid-alt', label: 'Dashboard', href: 'dashboard.html' };
   const internItem = { id: 'intern', icon: 'bx-group', label: 'Intern Management', href: 'intern.html' };
   const userItem = { id: 'user', icon: 'bx-user-circle', label: 'User Management', href: 'user.html' };
-  const doctorItem = { id: 'doctor', icon: 'bx-user-voice', label: 'Doctor OPD Schedule', href: 'doctor.html' };
+  const doctorItem = { id: 'doctor', icon: 'bx-user-voice', label: 'Doctor OPD', href: 'doctor.html' };
   const attendanceItem = { id: 'attendance', icon: 'bx-calendar-check', label: 'Attendance Module', href: 'attendance.html' };
   const trainingItem = { id: 'training', icon: 'bx-trending-up', label: 'Training Progress', href: 'training.html' };
   const scheduleItem = { id: 'schedule', icon: 'bx-time-five', label: 'Daily Schedule', href: 'schedule.html' };
@@ -38,6 +40,7 @@ function getSidebarItems(role) {
   if (normalizedRole === 'student') {
     return [
       dashboardItem,
+      doctorItem,
       attendanceItem,
       trainingItem,
       scheduleItem,
@@ -140,7 +143,7 @@ export function renderLayout(activePage = 'dashboard') {
     navbarContainer.innerHTML = `
       <header class="top-navbar">
         <div class="top-navbar-left">
-          <button class="menu-toggle" id="open-sidebar-btn">
+          <button class="menu-toggle mobile-only" id="open-sidebar-btn" title="Open Navigation Menu">
             <i class="bx bx-menu"></i>
           </button>
           <div class="page-title-group">
@@ -161,6 +164,11 @@ export function renderLayout(activePage = 'dashboard') {
 
   bindEvents();
   theme.updateToggleIcon();
+
+  // Safely initiate background preloading of other modules
+  if (user && user.role) {
+    preloadApplicationData(user, fbDb);
+  }
 }
 
 function bindEvents() {
@@ -193,11 +201,26 @@ function bindEvents() {
   const sidebar = document.querySelector('.sidebar');
 
   if (openSidebarBtn && sidebar) {
-    openSidebarBtn.addEventListener('click', () => sidebar.classList.add('mobile-open'));
+    openSidebarBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      sidebar.classList.add('mobile-open');
+    });
   }
   if (closeSidebarBtn && sidebar) {
-    closeSidebarBtn.addEventListener('click', () => sidebar.classList.remove('mobile-open'));
+    closeSidebarBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      sidebar.classList.remove('mobile-open');
+    });
   }
+
+  // Close mobile sidebar on outside click
+  document.addEventListener('click', (e) => {
+    if (sidebar && sidebar.classList.contains('mobile-open')) {
+      if (!sidebar.contains(e.target) && (!openSidebarBtn || !openSidebarBtn.contains(e.target))) {
+        sidebar.classList.remove('mobile-open');
+      }
+    }
+  });
 }
 
 function showProfilePopup() {

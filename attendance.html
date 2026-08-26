@@ -91,48 +91,74 @@
       color: #dc2626;
     }
 
-    .status-leave {
-      background: rgba(245, 158, 11, 0.15);
-      color: #d97706;
-    }
-
-    .status-half-day {
-      background: rgba(168, 85, 247, 0.15);
-      color: #9333ea;
-    }
-
-    .status-not-marked {
-      background: rgba(148, 163, 184, 0.15);
-      color: #64748b;
-    }
-
-    .attendance-select.not-marked {
-      background: rgba(148, 163, 184, 0.15);
-      color: #64748b;
-    }
-
     /* Stats Bar */
     .stats-bar {
       display: flex;
-      gap: 16px;
-      flex-wrap: wrap;
-      margin-top: 16px;
-    }
-
-    .stat-pill {
-      display: inline-flex;
       align-items: center;
-      gap: 8px;
-      padding: 8px 16px;
-      border-radius: 10px;
-      font-size: 13px;
-      font-weight: 700;
+      gap: 20px;
+      padding: 14px 20px;
       background: var(--bg-main);
       border: 1px solid var(--border-color);
+      border-radius: 12px;
+      margin-top: 16px;
+      flex-wrap: wrap;
     }
 
-    .stat-pill i {
-      font-size: 16px;
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .stat-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .stat-present .stat-icon {
+      background: rgba(16, 185, 129, 0.12);
+      color: #059669;
+    }
+
+    .stat-absent .stat-icon {
+      background: rgba(239, 68, 68, 0.12);
+      color: #dc2626;
+    }
+
+    .stat-total .stat-icon {
+      background: rgba(14, 165, 233, 0.12);
+      color: var(--primary-500);
+    }
+
+    .stat-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-value {
+      font-size: 18px;
+      font-weight: 800;
+      line-height: 1.2;
+      color: var(--text-main);
+    }
+
+    .stat-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-divider {
+      width: 1px;
+      height: 28px;
+      background: var(--border-color);
     }
 
     /* Remarks */
@@ -149,29 +175,6 @@
 
     .remarks-input:focus {
       border-color: var(--primary-500);
-    }
-
-    /* Notice */
-    .notice-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 18px;
-      border-radius: 12px;
-      font-size: 13px;
-      font-weight: 700;
-    }
-
-    .notice-admin {
-      background: rgba(14, 165, 233, 0.1);
-      color: var(--primary-500);
-      border: 1px solid rgba(14, 165, 233, 0.2);
-    }
-
-    .notice-student {
-      background: rgba(245, 158, 11, 0.1);
-      color: var(--accent-amber);
-      border: 1px solid rgba(245, 158, 11, 0.2);
     }
 
     /* Skeleton */
@@ -225,12 +228,6 @@
               <label class="form-label" style="margin-bottom: 0; font-weight: 700;">Select Date:</label>
               <input type="date" id="attendance-date-picker" class="form-control" style="width: 180px;">
             </div>
-            <div id="admin-notice" class="notice-badge notice-admin" style="display: none;">
-              <i class="bx bx-edit-alt"></i> Admin Mode: Mark status and click Save
-            </div>
-            <div id="student-notice" class="notice-badge notice-student" style="display: none;">
-              <i class="bx bx-lock-alt"></i> Read-Only: You can only view attendance history
-            </div>
           </div>
           <button id="save-attendance-btn" class="btn btn-success" style="display: none;">
             <i class="bx bx-check-double"></i> Save Attendance
@@ -239,19 +236,29 @@
 
         <!-- Stats Bar -->
         <div class="stats-bar" id="stats-bar" style="display: none;">
-          <div class="stat-pill"><i class="bx bx-check-circle" style="color: var(--accent-emerald);"></i> <span
-              id="stat-present">0</span> Present</div>
-          <div class="stat-pill"><i class="bx bx-x-circle" style="color: var(--accent-rose);"></i> <span
-              id="stat-absent">0</span> Absent</div>
-          <div class="stat-pill"><i class="bx bx-time" style="color: var(--accent-amber);"></i> <span
-              id="stat-leave">0</span> Leave</div>
-          <div class="stat-pill"><i class="bx bx-minus-circle" style="color: #9333ea;"></i> <span
-              id="stat-half">0</span>
-            Half Day</div>
-          <div class="stat-pill"><i class="bx bx-question-mark" style="color: #64748b;"></i> <span
-              id="stat-not-marked">0</span> Not Marked</div>
-          <div class="stat-pill" style="margin-left: auto;"><i class="bx bx-group"
-              style="color: var(--primary-500);"></i> <span id="stat-total">0</span> Total</div>
+          <div class="stat-item stat-present">
+            <div class="stat-icon"><i class="bx bx-check-circle"></i></div>
+            <div class="stat-info">
+              <span class="stat-value" id="stat-present">0</span>
+              <span class="stat-label">Present</span>
+            </div>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item stat-absent">
+            <div class="stat-icon"><i class="bx bx-x-circle"></i></div>
+            <div class="stat-info">
+              <span class="stat-value" id="stat-absent">0</span>
+              <span class="stat-label">Absent</span>
+            </div>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item stat-total">
+            <div class="stat-icon"><i class="bx bx-group"></i></div>
+            <div class="stat-info">
+              <span class="stat-value" id="stat-total">0</span>
+              <span class="stat-label">Total Interns</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -266,7 +273,7 @@
                 <th>Department</th>
                 <th>Attendance Status</th>
                 <th>Remarks</th>
-                <th>Total Attendance %</th>
+                <th>Overall Attendance %</th>
               </tr>
             </thead>
             <tbody id="attendance-tbody">

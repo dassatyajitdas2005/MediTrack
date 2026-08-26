@@ -29,8 +29,14 @@
       <div id="navbar-container"></div>
 
       <main class="page-content animate-fade-in">
+        <!-- Page Header -->
+        <div class="page-header" style="margin-bottom:24px;">
+          <h2 style="font-size:24px; font-weight:800;">System Settings</h2>
+          <p style="color:var(--text-muted); font-size:14px;">User account &amp; system status panel</p>
+        </div>
+
         <div class="grid-2" id="settings-grid">
-          <!-- Active Profile & User Information -->
+          <!-- Active Session Profile -->
           <div class="glass-card" style="padding: 24px;">
             <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 20px; display:flex; align-items:center; gap:8px;">
               <i class="bx bx-user-circle" style="color:var(--primary-500);"></i> Active Session Profile
@@ -44,32 +50,26 @@
 
             <div style="margin-top: 24px; padding-top: 20px; border-top: 1px dashed var(--border-color);">
               <h4 style="font-size: 14px; font-weight: 800; margin-bottom: 12px; display:flex; align-items:center; gap:8px;">
-                <i class="bx bx-slider-alt" style="color:var(--primary-500);"></i> Application Preferences
+                <i class="bx bx-slider-alt" style="color:var(--primary-500);"></i> Account Details
               </h4>
-              <div style="display:flex; flex-direction:column; gap:12px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:var(--bg-main); border-radius:var(--radius-md);">
-                  <div>
-                    <div style="font-weight:700; font-size:13px;">Toast Notifications</div>
-                    <div style="font-size:12px; color:var(--text-muted);">Show pop-up alerts for CRUD actions</div>
-                  </div>
-                  <input type="checkbox" id="pref-notifications" checked style="width:18px; height:18px; accent-color:var(--primary-500);">
+              <div style="display:flex; flex-direction:column; gap:10px; font-size:13px;">
+                <div style="display:flex; justify-content:space-between; padding:10px 14px; background:var(--bg-main); border-radius:var(--radius-md);">
+                  <span style="color:var(--text-muted);">Account Status</span>
+                  <span class="status-pill active" style="font-size:11px;"><i class="bx bx-check-circle"></i> Active</span>
                 </div>
 
-                <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:var(--bg-main); border-radius:var(--radius-md);">
-                  <div>
-                    <div style="font-weight:700; font-size:13px;">Auto-Refresh Tables</div>
-                    <div style="font-size:12px; color:var(--text-muted);">Re-fetch Firestore data after save</div>
-                  </div>
-                  <input type="checkbox" id="pref-autorefresh" checked style="width:18px; height:18px; accent-color:var(--primary-500);">
+                <div style="display:flex; justify-content:space-between; padding:10px 14px; background:var(--bg-main); border-radius:var(--radius-md);">
+                  <span style="color:var(--text-muted);">Role &amp; Access</span>
+                  <span style="font-weight:700;" id="settings-role-display">Admin</span>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- System Status & Appearance -->
+          <!-- Theme & System Status -->
           <div class="glass-card" style="padding: 24px;">
             <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 20px; display:flex; align-items:center; gap:8px;">
-              <i class="bx bx-palette" style="color:var(--primary-500);"></i> Theme & Appearance
+              <i class="bx bx-palette" style="color:var(--primary-500);"></i> Theme &amp; Appearance
             </h3>
 
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:24px;">
@@ -83,21 +83,21 @@
 
             <div style="padding-top: 20px; border-top: 1px dashed var(--border-color);">
               <h4 style="font-size: 14px; font-weight: 800; margin-bottom: 16px; display:flex; align-items:center; gap:8px;">
-                <i class="bx bx-cloud-check" style="color:var(--accent-emerald);"></i> Cloud Database &amp; System Status
+                <i class="bx bx-cloud-check" style="color:var(--accent-emerald);"></i> System Status
               </h4>
 
               <div style="display:flex; flex-direction:column; gap:10px; font-size:13px;">
                 <div style="display:flex; justify-content:space-between; padding:10px 14px; background:var(--bg-main); border-radius:var(--radius-md);">
-                  <span style="color:var(--text-muted);">Database Provider</span>
-                  <span style="font-weight:700; color:var(--primary-500);"><i class="bx bxl-firebase"></i> Google Cloud Firestore</span>
+                  <span style="color:var(--text-muted);">Email Verification</span>
+                  <span style="font-weight:700; color:var(--accent-emerald);" id="settings-email-verification">Verified</span>
                 </div>
                 <div style="display:flex; justify-content:space-between; padding:10px 14px; background:var(--bg-main); border-radius:var(--radius-md);">
                   <span style="color:var(--text-muted);">Connection Status</span>
                   <span class="status-pill active" style="font-size:11px;"><i class="bx bx-check-circle"></i> Connected &amp; Online</span>
                 </div>
                 <div style="display:flex; justify-content:space-between; padding:10px 14px; background:var(--bg-main); border-radius:var(--radius-md);">
-                  <span style="color:var(--text-muted);">Database Mode</span>
-                  <span style="font-weight:700;">Production Live DB</span>
+                  <span style="color:var(--text-muted);">Last Login</span>
+                  <span style="font-weight:700;" id="settings-last-login">Today</span>
                 </div>
                 <div style="display:flex; justify-content:space-between; padding:10px 14px; background:var(--bg-main); border-radius:var(--radius-md);">
                   <span style="color:var(--text-muted);">Application Version</span>
@@ -106,7 +106,7 @@
               </div>
 
               <div style="margin-top:20px;">
-                <button type="button" id="settings-logout-btn" class="btn btn-danger" style="width:100%;">
+                <button type="button" id="settings-logout-btn" class="btn btn-danger" style="width:100%; justify-content:center;">
                   <i class="bx bx-log-out"></i> Logout Session
                 </button>
               </div>
