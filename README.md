@@ -72,6 +72,10 @@
 
 ---
 
+<img width="1919" height="931" alt="image" src="https://github.com/user-attachments/assets/87b17c9a-acf0-45e8-9e1d-ae84910e27a6" />
+
+---
+
 ## About MediTrack
 
 MediTrack is a modern, web-based **Hospital Internship & Training Management System** designed to manage internship-related activities, including students/interns, attendance, training progress, doctors, OPD (Out-Patient Department) schedules, certificates, reports, users, and role-based access.
