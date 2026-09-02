@@ -193,7 +193,7 @@
             e.preventDefault();
 
             const name = document.getElementById("signup-name").value.trim();
-            const email = document.getElementById("signup-email").value.trim();
+            const email = document.getElementById("signup-email").value.trim().toLowerCase();
             const password = document.getElementById("signup-password").value;
             const confirm = document.getElementById("signup-confirm").value;
             const btn = document.getElementById("submit-btn");
@@ -219,8 +219,8 @@
                 btn.innerHTML = '<i class="bx bx-user-plus"></i> Create Account';
 
                 const map = {
-                    "auth/email-already-in-use": "This email is already registered.",
-                    "auth/invalid-email": "Invalid email address.",
+                    "auth/email-already-in-use": "This email is already registered. Please sign in instead.",
+                    "auth/invalid-email": "Invalid email address format.",
                     "auth/weak-password": "Password must be at least 6 characters."
                 };
                 alert(map[error.code] || error.message);

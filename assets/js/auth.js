@@ -8,7 +8,8 @@ import {
   onAuthStateChanged,
   signInWithPopup,
   fetchSignInMethodsForEmail,
-  linkWithPopup
+  linkWithPopup,
+  sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 import {
   doc,
@@ -232,7 +233,8 @@ class AuthService {
 
   /* ========== LOGIN ========== */
   async login(email, password) {
-    const cred = await signInWithEmailAndPassword(firebaseAuth, email, password);
+    const cleanEmail = (email || '').trim().toLowerCase();
+    const cred = await signInWithEmailAndPassword(firebaseAuth, cleanEmail, password);
     const firebaseUser = cred.user;
 
     let userData;
@@ -240,25 +242,30 @@ class AuthService {
       const snap = await getDoc(doc(db, "users", firebaseUser.uid));
       userData = snap.exists() ? snap.data() : null;
     } catch (err) {
-      console.warn("Firestore read failed");
+      console.warn("Firestore read failed", err);
     }
 
     if (!userData) {
       userData = {
         uid: firebaseUser.uid,
-        email: firebaseUser.email,
-        name: firebaseUser.email.split("@")[0],
+        email: firebaseUser.email || cleanEmail,
+        name: firebaseUser.displayName || cleanEmail.split("@")[0],
         role: "student",
         department: "Pharmacy",
         status: "active",
-        emailVerified: false
+        emailVerified: Boolean(firebaseUser.emailVerified)
       };
     }
 
+    if (firebaseUser.emailVerified && !userData.emailVerified) {
+      userData.emailVerified = true;
+    }
+
+    this._currentUser = userData;
     saveCache(userData);
 
     if (!userData.emailVerified) {
-      await this._createAndSendOTP(firebaseUser.uid, firebaseUser.email, userData.name);
+      await this._createAndSendOTP(firebaseUser.uid, firebaseUser.email || cleanEmail, userData.name);
       return { userData, needsVerification: true };
     }
 
@@ -267,13 +274,15 @@ class AuthService {
 
   /* ========== REGISTER ========== */
   async register(email, password, name) {
-    const cred = await createUserWithEmailAndPassword(firebaseAuth, email, password);
+    const cleanEmail = (email || '').trim().toLowerCase();
+    const cleanName = (name || '').trim();
+    const cred = await createUserWithEmailAndPassword(firebaseAuth, cleanEmail, password);
     const firebaseUser = cred.user;
 
     const profile = {
       uid: firebaseUser.uid,
-      email: firebaseUser.email,
-      name: name || firebaseUser.email.split("@")[0],
+      email: firebaseUser.email || cleanEmail,
+      name: cleanName || cleanEmail.split("@")[0],
       role: "student",
       department: "Pharmacy",
       status: "active",
@@ -287,10 +296,22 @@ class AuthService {
       console.warn("Firestore write failed:", err);
     }
 
-    saveCache({ ...profile, emailVerified: false, createdAt: new Date().toISOString() });
+    const cachedProfile = { ...profile, emailVerified: false, createdAt: new Date().toISOString() };
+    this._currentUser = cachedProfile;
+    saveCache(cachedProfile);
 
-    const result = await this._createAndSendOTP(firebaseUser.uid, firebaseUser.email, profile.name);
+    const result = await this._createAndSendOTP(firebaseUser.uid, firebaseUser.email || cleanEmail, profile.name);
     return { uid: firebaseUser.uid, ...result, message: "OTP sent to your email!" };
+  }
+
+  /* ========== RESET / SET PASSWORD ========== */
+  async resetPassword(email) {
+    const cleanEmail = (email || '').trim().toLowerCase();
+    if (!cleanEmail) {
+      throw new Error("Please enter your email address in the email field first.");
+    }
+    await sendPasswordResetEmail(firebaseAuth, cleanEmail);
+    return `Password reset/setup link has been sent to ${cleanEmail}. Please check your inbox (and spam folder) to set your password.`;
   }
 
   /* ========== GOOGLE SIGN-IN ========== */
@@ -438,6 +459,9 @@ class AuthService {
     if (cached) {
       cached.emailVerified = true;
       saveCache(cached);
+    }
+    if (this._currentUser) {
+      this._currentUser.emailVerified = true;
     }
 
     return "Email verified successfully!";
